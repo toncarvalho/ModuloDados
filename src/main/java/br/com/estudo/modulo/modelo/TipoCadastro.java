@@ -7,14 +7,15 @@ import java.io.Serializable;
  */
 public class TipoCadastro implements Serializable {
 
-    private String tipoCadastro;
+    private Integer tipoCadastro;
     private String descricao;
 
-    public String getTipoCadastro() {
+
+    public Integer getTipoCadastro() {
         return tipoCadastro;
     }
 
-    public void setTipoCadastro(String tipoCadastro) {
+    public void setTipoCadastro(Integer tipoCadastro) {
         this.tipoCadastro = tipoCadastro;
     }
 
@@ -33,17 +34,36 @@ public class TipoCadastro implements Serializable {
 
         TipoCadastro that = (TipoCadastro) o;
 
-        if (!descricao.equals(that.descricao)) return false;
-        if (!tipoCadastro.equals(that.tipoCadastro)) return false;
+        if (descricao != null ? !descricao.equals(that.descricao) : that.descricao != null) return false;
+        if (tipoCadastro != null ? !tipoCadastro.equals(that.tipoCadastro) : that.tipoCadastro != null) return false;
 
         return true;
     }
 
     @Override
     public int hashCode() {
-        int result = tipoCadastro.hashCode();
-        result = 31 * result + descricao.hashCode();
+        int result = tipoCadastro != null ? tipoCadastro.hashCode() : 0;
+        result = 31 * result + (descricao != null ? descricao.hashCode() : 0);
         return result;
     }
 
+    public TipoCadastro(Integer tipoCadastro, String descricao) {
+        this.tipoCadastro = tipoCadastro;
+        this.descricao = descricao;
+    }
+
+    public TipoCadastro() {
+    }
+
+    @Override
+    public String toString() {
+        return "TipoCadastro{" +
+                "tipoCadastro=" + tipoCadastro +
+                ", descricao='" + descricao + '\'' +
+                '}';
+    }
+
+    public TipoCadastro(String descricao) {
+        this.descricao = descricao;
+    }
 }

@@ -1,5 +1,6 @@
 package br.com.estudo.modulo.dao;
 
+import br.com.estudo.modulo.components.AbstractDAO;
 import br.com.estudo.modulo.modelo.Endereco;
 
 /**
@@ -12,9 +13,10 @@ public class EnderecoDAO extends AbstractDAO<Endereco> {
     }
 
     @Override
-    public Boolean excluir(Endereco entidade) {
+    public Boolean excluir(Object id) {
         return null;
     }
+
 
     @Override
     public Endereco alterar(Endereco entidade) {

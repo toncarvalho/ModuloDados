@@ -1,7 +1,9 @@
 package testes;
 
-import br.com.estudo.modulo.dao.Conexao;
+import br.com.estudo.modulo.components.Conexao;
 import org.junit.Test;
+
+import static junit.framework.Assert.assertNotNull;
 
 /**
  * Created by Vinicius on 30/04/2015.
@@ -9,9 +11,17 @@ import org.junit.Test;
 public class TesteConexao {
 
     @Test
-    public void testarConexao(){
-        Conexao conexao = new Conexao();
+    public void testarConexaoMysql() {
 
-        conexao.conectar();
+
+        assertNotNull("conexão MYSQL falhou", Conexao.getInstance().conectarMySql());
+    }
+
+
+    // desabilitado temporariamente, para habilitar, basta adicionar a annotation @Test
+    public void testarConexaoSqlServer() {
+
+
+        assertNotNull("conexão SQLSERVER falhou", Conexao.getInstance().conectarSqlServer());
     }
 }
