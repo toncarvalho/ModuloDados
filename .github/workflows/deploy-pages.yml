@@ -1,0 +1,46 @@
+name: Deploy to GitHub Pages
+
+# Publica o jogo (site estático) no GitHub Pages.
+# Pré-requisito (uma vez): Settings -> Pages -> Source = GitHub Actions.
+on:
+  push:
+    branches:
+      - "claude/kpop-math-game-mobile-59elt1"
+      - "master"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Evita deploys concorrentes; não cancela um deploy em andamento.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Pages
+        uses: actions/configure-pages@v5
+        with:
+          # Habilita o GitHub Pages (source = GitHub Actions) automaticamente,
+          # evitando a necessidade de ligar manualmente em Settings -> Pages.
+          enablement: true
+
+      - name: Empacotar o site (raiz do repositório)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy para o GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
