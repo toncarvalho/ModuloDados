@@ -1,6 +1,7 @@
 /**
- * HeroScene — escolha do herói (cosmético). Mostra os 3 heróis em cards;
- * tocar num card salva a escolha e segue para a seleção de fases.
+ * HeroScene — trocar o avatar (heroína) do jogador atual. Mostra as 3 heroínas
+ * em cards; tocar atualiza o perfil ativo e volta ao menu. (A escolha inicial
+ * acontece ao criar o perfil na ProfileScene.)
  */
 class HeroScene extends Phaser.Scene {
   constructor() {
@@ -12,8 +13,8 @@ class HeroScene extends Phaser.Scene {
     this.cameras.main.fadeIn(180, 13, 13, 18);
     this.add.image(cx, GAME_HEIGHT / 2, "bg");
 
-    UI.titulo(this, cx, 170, "ESCOLHA", 78, "#ff3ea5");
-    UI.titulo(this, cx, 260, "SEU HERÓI", 78, "#2ff7e6");
+    UI.titulo(this, cx, 170, "TROCAR", 78, "#ff3ea5");
+    UI.titulo(this, cx, 260, "AVATAR", 78, "#2ff7e6");
 
     const selecionado = Storage.getHeroiId();
 
@@ -101,7 +102,7 @@ class HeroScene extends Phaser.Scene {
       AudioFX.unlock();
       AudioFX.acerto();
       Storage.setHeroi(heroi.id);
-      Util.trocarCena(this, "StageScene", { heroId: heroi.id });
+      Util.trocarCena(this, "MenuScene");
     });
     cont.on("pointerup", () => cont.setScale(1.03));
   }

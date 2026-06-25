@@ -37,6 +37,7 @@ const config = {
   disableContextMenu: true,
   scene: [
     BootScene,
+    ProfileScene,
     MenuScene,
     HeroScene,
     StageScene,

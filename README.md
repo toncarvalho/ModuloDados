@@ -11,9 +11,12 @@ resposta certa para atacar, encadeie **combos**, não perca suas **vidas** ❤�
 ## ✨ Características
 
 - 📱 **Mobile-first**: feito para toque, instalável como app (PWA), orientação retrato.
-- 🦸 **3 heroínas** para escolher ao iniciar (Rubi, Lorena e Mel) — cosméticas (figura + cor +
-  nome); a heroína aparece no HUD e acompanha você pelas fases. Figuras ilustradas geradas com
-  **DiceBear (estilo Lorelei, CC0)**.
+- 👥 **Perfis locais de jogador** (sem servidor): vários jogadores (irmãs, colegas) no mesmo
+  aparelho escolhem "quem vai jogar" — cada perfil tem **nome + avatar** e **progresso/estrelas/
+  recorde próprios**, tudo no `localStorage`. Não é login/senha — é um seletor de jogador.
+- 🦸 **3 heroínas** como avatar (Rubi, Lorena e Mel) — cosméticas (figura + cor + nome); a
+  heroína acompanha você pelas fases e pode ser trocada a qualquer momento. Figuras ilustradas
+  geradas com **DiceBear (estilo Avataaars)**.
 - 🗺️ **12 fases** em progressão por tabuada: 1–2 → 1–3 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10,
   e as **duas últimas misturam todas** (1–10). A dificuldade vem da tabuada da fase.
 - 🔓 Cada fase **desbloqueia a próxima** ao ser vencida (progresso salvo).
@@ -46,8 +49,9 @@ No celular, abra o mesmo endereço na mesma rede, ou hospede no **GitHub Pages**
 
 ## 🎮 Como jogar
 
-1. No menu, toque em **JOGAR** (ou **Continuar** para ir à última fase desbloqueada).
-2. Escolha o seu **herói** (Lyra, Ravena ou Nova).
+1. Na primeira vez, **crie seu jogador** (nome + heroína). Depois é só escolher seu perfil na
+   tela "Quem vai jogar?" — use **🔄 Trocar** no menu para alternar entre jogadores.
+2. No menu, toque em **JOGAR** (ou **Continuar** para ir à última fase desbloqueada).
 3. Selecione uma **fase** na grade (as próximas desbloqueiam ao vencer a anterior).
 4. Responda as contas tocando na alternativa certa. Acerto = ataque + combo;
    erro ou tempo esgotado = perde uma vida.
@@ -65,9 +69,9 @@ js/data/herois.js     # 🦸 HEROIS (figura + cor + nome) — cosméticos
 assets/herois/*.svg   # figuras das heroínas (DiceBear / Lorelei, CC0)
 js/core/MathEngine.js # geração de perguntas e alternativas
 js/core/Audio.js      # efeitos sonoros (Web Audio)
-js/core/Storage.js    # progresso/recorde/herói (localStorage)
+js/core/Storage.js    # perfis locais + progresso/recorde/estrelas (localStorage)
 js/core/UI.js         # botões e textos neon reutilizáveis
-js/scenes/*.js        # Boot, Menu, Hero, Stage, Game, Result
+js/scenes/*.js        # Boot, Profile, Menu, Hero, Stage, Game, Result, Settings, Train
 assets/icon.svg       # ícone do app
 ```
 
