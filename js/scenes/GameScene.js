@@ -137,11 +137,25 @@ class GameScene extends Phaser.Scene {
         color: "#ffffff",
       })
       .setOrigin(0.5);
-    this.txtPergunta.setShadow(0, 0, "#2ff7e6", 16, true, true);
+    this.txtPergunta.setShadow(0, 0, "#2ff7e6", 10, true, true);
 
-    // barra de tempo
+    // barra de tempo: fundo arredondado desenhado UMA vez; o preenchimento é um
+    // retângulo escalado por frame (transform-only, sem retesselar caminho a cada tick).
+    this.timerW = 500;
+    this.timerX = GAME_WIDTH / 2 - this.timerW / 2;
+    this.timerY = 730;
     this.timerBarBg = this.add.graphics();
-    this.timerBar = this.add.graphics();
+    this.timerBarBg.fillStyle(0x000000, 0.4);
+    this.timerBarBg.fillRoundedRect(this.timerX, this.timerY, this.timerW, 18, 9);
+    this.timerBarBg.setVisible(false);
+    this.timerFill = this.add
+      .rectangle(this.timerX, this.timerY + 9, this.timerW, 18, 0x2ff7e6)
+      .setOrigin(0, 0.5)
+      .setVisible(false);
+    this.timerAtivo = false;
+
+    // pool de textos flutuantes ("+pontos"/"-1 ❤️") — reusa em vez de criar/destruir.
+    this._floatPool = [];
 
     // botões de resposta criados uma única vez (reaproveitados a cada pergunta)
     this.criarBotoesResposta();
@@ -283,52 +297,48 @@ class GameScene extends Phaser.Scene {
   }
 
   // Oculta/desabilita os botões sem destruí-los (banner do chefão, fim de jogo).
+  // Também esconde a barra de tempo (só é chamado ao limpar o palco, não no feedback).
   limparBotoes() {
     this.botoesResposta.forEach((b) => b.setVisible(false).disableInteractive());
+    this.pararTimer();
+    this.timerBarBg.setVisible(false);
+    this.timerFill.setVisible(false);
   }
 
   // ---------- Timer ----------
   iniciarTimer() {
     this.pararTimer();
     const segundos = this.dif.tempoResposta;
-    this.timerBarBg.clear();
-    this.timerBar.clear();
-    if (!segundos) return; // fácil = sem timer
-
-    const w = 500;
-    const x = GAME_WIDTH / 2 - w / 2;
-    const y = 730;
-    this.timerBarBg.fillStyle(0x000000, 0.4);
-    this.timerBarBg.fillRoundedRect(x, y, w, 18, 9);
-
+    if (!segundos) {
+      // fácil = sem timer
+      this.timerBarBg.setVisible(false);
+      this.timerFill.setVisible(false);
+      return;
+    }
     this.tempoTotal = segundos * 1000;
     this.tempoRestante = this.tempoTotal;
-    this.timerEvent = this.time.addEvent({
-      delay: 50,
-      loop: true,
-      callback: () => {
-        this.tempoRestante -= 50;
-        const frac = Phaser.Math.Clamp(
-          this.tempoRestante / this.tempoTotal,
-          0,
-          1
-        );
-        this.timerBar.clear();
-        const cor = frac > 0.3 ? 0x2ff7e6 : 0xff3030;
-        this.timerBar.fillStyle(cor, 1);
-        this.timerBar.fillRoundedRect(x, y, w * frac, 18, 9);
-        if (this.tempoRestante <= 0) {
-          this.pararTimer();
-          this.tempoEsgotado();
-        }
-      },
-    });
+    this.timerFill.scaleX = 1;
+    this.timerFill.setFillStyle(0x2ff7e6);
+    this.timerBarBg.setVisible(true);
+    this.timerFill.setVisible(true);
+    this.timerAtivo = true;
   }
 
   pararTimer() {
-    if (this.timerEvent) {
-      this.timerEvent.remove();
-      this.timerEvent = null;
+    this.timerAtivo = false;
+  }
+
+  // Loop do timer dirigido pelo frame (delta) — suave e barato (só transform).
+  update(time, delta) {
+    if (!this.timerAtivo || this.acabou || this.respondendo) return;
+    this.tempoRestante -= delta;
+    const frac = Phaser.Math.Clamp(this.tempoRestante / this.tempoTotal, 0, 1);
+    this.timerFill.scaleX = frac;
+    const cor = frac > 0.3 ? 0x2ff7e6 : 0xff3030;
+    if (this.timerFill.fillColor !== cor) this.timerFill.setFillStyle(cor);
+    if (this.tempoRestante <= 0) {
+      this.pararTimer();
+      this.tempoEsgotado();
     }
   }
 
@@ -363,7 +373,7 @@ class GameScene extends Phaser.Scene {
     if (this.combo >= 3) AudioFX.combo();
 
     // efeito de golpe no inimigo
-    this.particulas.emitParticleAt(this.inimigoSprite.x, this.inimigoSprite.y, 18);
+    this.particulas.emitParticleAt(this.inimigoSprite.x, this.inimigoSprite.y, 14);
     AudioFX.golpe();
     this.tweens.add({
       targets: this.inimigoSprite,
@@ -419,21 +429,30 @@ class GameScene extends Phaser.Scene {
   }
 
   flutuarTexto(str, cor) {
-    const t = this.add
-      .text(GAME_WIDTH / 2, 700, str, {
-        fontFamily: UI.FONT,
-        fontSize: "60px",
-        fontStyle: "bold",
-        color: cor,
-      })
-      .setOrigin(0.5)
-      .setDepth(80);
+    // Reusa um texto inativo do pool; cria um novo só se todos estiverem em uso.
+    let t = this._floatPool.find((o) => !o.visible);
+    if (!t) {
+      t = this.add
+        .text(0, 0, "", {
+          fontFamily: UI.FONT,
+          fontSize: "60px",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5)
+        .setDepth(80);
+      this._floatPool.push(t);
+    }
+    t.setText(str)
+      .setColor(cor)
+      .setPosition(GAME_WIDTH / 2, 700)
+      .setAlpha(1)
+      .setVisible(true);
     this.tweens.add({
       targets: t,
       y: 580,
       alpha: 0,
       duration: 700,
-      onComplete: () => t.destroy(),
+      onComplete: () => t.setVisible(false),
     });
   }
 
