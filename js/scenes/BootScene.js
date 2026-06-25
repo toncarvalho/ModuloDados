@@ -22,7 +22,8 @@ class BootScene extends Phaser.Scene {
     this.gerarBrilho();
     this.gerarEstrela();
     this.gerarRaio();
-    this.scene.start("MenuScene");
+    // Tem jogador ativo? vai ao menu; senão, escolhe/cria um perfil.
+    this.scene.start(Storage.temPerfilAtual() ? "MenuScene" : "ProfileScene");
   }
 
   /** Fundo vertical gradiente neon roxo->preto->rosa com estrelas estáticas. */

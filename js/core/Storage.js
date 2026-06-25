@@ -1,89 +1,258 @@
 /**
- * Storage — persistência via localStorage.
- * Guarda: progresso (fase máxima), recorde, herói, estrelas por fase,
- * configurações (música/efeitos/timer/voz) e "fatos fracos" (repetição inteligente).
+ * Storage — persistência via localStorage com PERFIS LOCAIS (vários jogadores
+ * no mesmo aparelho, sem servidor). Não é login/senha — é um seletor de jogador.
+ *
+ * Chaves:
+ *  - idolmath.perfis.v1 → { atual: id|null, perfis: [{ id, nome, heroiId, criadoEm }] }
+ *  - idolmath.save.<id> → progresso POR perfil
+ *      { melhorPontuacao, faseDesbloqueada, estrelas:{}, fatos:{}, bossRush }
+ *  - idolmath.config.v1 → configuração GLOBAL do aparelho (compartilhada)
+ *      { musica, efeitos, timer, voz }
+ *
+ * Migração: se não houver índice de perfis mas existir o save antigo
+ * (idolmath.save.v2), cria um perfil herdando o progresso + herói e move a
+ * config para a chave global — ninguém perde estrelas.
  */
 const Storage = (() => {
-  const KEY = "idolmath.save.v2";
+  const KEY_INDEX = "idolmath.perfis.v1";
+  const KEY_CONFIG = "idolmath.config.v1";
+  const KEY_SAVE = (id) => `idolmath.save.${id}`;
+  const KEY_LEGADO = "idolmath.save.v2";
+  const MAX_PERFIS = 6;
 
-  const defaults = () => ({
+  // ---------- defaults ----------
+  const defaultsSave = () => ({
     melhorPontuacao: 0,
     faseDesbloqueada: 1, // maior fase desbloqueada (1-based)
-    heroiId: 1,
     estrelas: {}, // { faseId: 0..3 } melhor estrela por fase
     fatos: {}, // { "min x max": peso }  peso alto = errou mais (repetir mais)
-    config: { musica: true, efeitos: true, timer: true, voz: false },
     bossRush: false, // desbloqueado ao zerar a última fase
   });
 
-  function load() {
+  const defaultsConfig = () => ({
+    musica: true,
+    efeitos: true,
+    timer: true,
+    voz: false,
+  });
+
+  // ---------- helpers de baixo nível ----------
+  function ler(chave, fallback) {
     try {
-      const raw = localStorage.getItem(KEY);
-      const data = raw ? Object.assign(defaults(), JSON.parse(raw)) : defaults();
-      // compat: campo antigo "muted" → efeitos
-      if (typeof data.muted === "boolean") {
-        data.config = data.config || {};
-        if (data.config.efeitos === undefined) data.config.efeitos = !data.muted;
-        delete data.muted;
-      }
-      data.config = Object.assign(defaults().config, data.config || {});
-      return data;
+      const raw = localStorage.getItem(chave);
+      return raw ? JSON.parse(raw) : fallback;
     } catch (e) {
-      return defaults();
+      return fallback;
     }
   }
-
-  function save() {
+  function gravar(chave, valor) {
     try {
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(chave, JSON.stringify(valor));
     } catch (e) {
       /* armazenamento indisponível — segue sem persistir */
     }
+  }
+  function remover(chave) {
+    try {
+      localStorage.removeItem(chave);
+    } catch (e) {}
   }
 
   function chaveFato(a, b) {
     return `${Math.min(a, b)}x${Math.max(a, b)}`;
   }
 
-  let state = load();
+  function novoId() {
+    return "p" + Date.now().toString(36) + Math.floor(Math.random() * 1000);
+  }
+
+  // ---------- estado em memória ----------
+  let _index; // { atual, perfis: [] }
+  let _config; // config global
+  let state; // save do perfil atual (defaultsSave se não houver atual)
+
+  function carregarIndice() {
+    const idx = ler(KEY_INDEX, null);
+    if (idx && Array.isArray(idx.perfis)) {
+      return { atual: idx.atual || null, perfis: idx.perfis };
+    }
+    return null;
+  }
+
+  function salvarIndice() {
+    gravar(KEY_INDEX, _index);
+  }
+
+  function carregarSave(id) {
+    if (!id) return defaultsSave();
+    return Object.assign(defaultsSave(), ler(KEY_SAVE(id), {}));
+  }
+
+  function salvarSave() {
+    if (_index.atual) gravar(KEY_SAVE(_index.atual), state);
+  }
+
+  function metaAtual() {
+    if (!_index.atual) return null;
+    return _index.perfis.find((p) => p.id === _index.atual) || null;
+  }
+
+  // ---------- migração do save antigo (v2, jogador único) ----------
+  function migrarLegado() {
+    const antigo = ler(KEY_LEGADO, null);
+    if (!antigo) return null; // nada a migrar
+
+    const id = novoId();
+    const save = {
+      melhorPontuacao: antigo.melhorPontuacao || 0,
+      faseDesbloqueada: antigo.faseDesbloqueada || 1,
+      estrelas: antigo.estrelas || {},
+      fatos: antigo.fatos || {},
+      bossRush: !!antigo.bossRush,
+    };
+    gravar(KEY_SAVE(id), save);
+
+    // config antiga (incl. compat "muted") → config global
+    const cfg = Object.assign(defaultsConfig(), antigo.config || {});
+    if (typeof antigo.muted === "boolean" && (!antigo.config || antigo.config.efeitos === undefined)) {
+      cfg.efeitos = !antigo.muted;
+    }
+    gravar(KEY_CONFIG, cfg);
+
+    return {
+      id,
+      nome: "Jogador 1",
+      heroiId: antigo.heroiId || 1,
+      criadoEm: Date.now(),
+    };
+  }
+
+  // ---------- inicialização ----------
+  function init() {
+    _index = carregarIndice();
+    if (!_index) {
+      // Sem índice: tentar migrar o save antigo (jogador único) para um perfil.
+      // A migração grava KEY_CONFIG com a config antiga — por isso roda ANTES de
+      // carregarmos _config (senão a config migrada não vai para a memória).
+      const perfilMigrado = migrarLegado();
+      if (perfilMigrado) {
+        _index = { atual: perfilMigrado.id, perfis: [perfilMigrado] };
+        remover(KEY_LEGADO);
+      } else {
+        _index = { atual: null, perfis: [] };
+      }
+      salvarIndice();
+    }
+
+    // Config global (já pode ter sido gravada pela migração).
+    _config = Object.assign(defaultsConfig(), ler(KEY_CONFIG, {}));
+    gravar(KEY_CONFIG, _config);
+
+    state = carregarSave(_index.atual);
+  }
+
+  init();
 
   return {
     get() {
       return state;
     },
 
-    // ---- progresso / pontuação ----
+    // ===================== PERFIS =====================
+    listarPerfis() {
+      return _index.perfis.slice();
+    },
+    perfilAtual() {
+      return metaAtual();
+    },
+    temPerfilAtual() {
+      return !!metaAtual();
+    },
+    perfilCheio() {
+      return _index.perfis.length >= MAX_PERFIS;
+    },
+    maxPerfis() {
+      return MAX_PERFIS;
+    },
+    criarPerfil(nome, heroiId) {
+      if (_index.perfis.length >= MAX_PERFIS) return null;
+      const meta = {
+        id: novoId(),
+        nome: (nome || "Jogador").toString().slice(0, 12).trim() || "Jogador",
+        heroiId: heroiId || 1,
+        criadoEm: Date.now(),
+      };
+      _index.perfis.push(meta);
+      _index.atual = meta.id;
+      salvarIndice();
+      state = defaultsSave();
+      salvarSave();
+      return meta;
+    },
+    selecionarPerfil(id) {
+      const existe = _index.perfis.some((p) => p.id === id);
+      if (!existe) return false;
+      _index.atual = id;
+      salvarIndice();
+      state = carregarSave(id);
+      return true;
+    },
+    removerPerfil(id) {
+      const i = _index.perfis.findIndex((p) => p.id === id);
+      if (i === -1) return false;
+      _index.perfis.splice(i, 1);
+      remover(KEY_SAVE(id));
+      if (_index.atual === id) {
+        _index.atual = null;
+        state = defaultsSave();
+      }
+      salvarIndice();
+      return true;
+    },
+    renomearPerfil(id, nome) {
+      const meta = _index.perfis.find((p) => p.id === id);
+      if (!meta) return false;
+      meta.nome = (nome || meta.nome).toString().slice(0, 12).trim() || meta.nome;
+      salvarIndice();
+      return true;
+    },
+
+    // ===================== PROGRESSO / PONTUAÇÃO =====================
     setMelhorPontuacao(pontos) {
       if (pontos > state.melhorPontuacao) {
         state.melhorPontuacao = pontos;
-        save();
+        salvarSave();
       }
     },
     desbloquearFase(faseId) {
       if (faseId > (state.faseDesbloqueada || 1)) {
         state.faseDesbloqueada = faseId;
-        save();
+        salvarSave();
       }
     },
     faseMax() {
       return state.faseDesbloqueada || 1;
     },
 
-    // ---- herói ----
+    // ===================== HERÓI (avatar do perfil) =====================
     setHeroi(id) {
-      state.heroiId = id;
-      save();
+      const meta = metaAtual();
+      if (meta) {
+        meta.heroiId = id;
+        salvarIndice();
+      }
     },
     getHeroiId() {
-      return state.heroiId || 1;
+      const meta = metaAtual();
+      return (meta && meta.heroiId) || 1;
     },
 
-    // ---- estrelas por fase ----
+    // ===================== ESTRELAS POR FASE =====================
     setEstrelas(faseId, estrelas) {
       const atual = state.estrelas[faseId] || 0;
       if (estrelas > atual) {
         state.estrelas[faseId] = estrelas;
-        save();
+        salvarSave();
       }
     },
     getEstrelas(faseId) {
@@ -93,37 +262,37 @@ const Storage = (() => {
       return Object.values(state.estrelas).reduce((s, n) => s + n, 0);
     },
 
-    // ---- repetição inteligente (fatos fracos) ----
+    // ===================== REPETIÇÃO INTELIGENTE (fatos fracos) =====================
     registrarResposta(a, b, acertou) {
       const k = chaveFato(a, b);
       let p = state.fatos[k] || 0;
       p = acertou ? Math.max(0, p * 0.5 - 0.2) : Math.min(8, p + 2);
       if (p <= 0.01) delete state.fatos[k];
       else state.fatos[k] = p;
-      save();
+      salvarSave();
     },
     getFatos() {
       return state.fatos;
     },
 
-    // ---- Boss Rush ----
+    // ===================== BOSS RUSH =====================
     desbloquearBossRush() {
       if (!state.bossRush) {
         state.bossRush = true;
-        save();
+        salvarSave();
       }
     },
     bossRushDesbloqueado() {
       return !!state.bossRush;
     },
 
-    // ---- configurações ----
+    // ===================== CONFIGURAÇÕES (globais do aparelho) =====================
     getConfig() {
-      return state.config;
+      return _config;
     },
     setConfig(chave, valor) {
-      state.config[chave] = !!valor;
-      save();
+      _config[chave] = !!valor;
+      gravar(KEY_CONFIG, _config);
     },
   };
 })();

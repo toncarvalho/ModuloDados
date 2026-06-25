@@ -33,7 +33,10 @@ class MenuScene extends Phaser.Scene {
     AudioFX.sincronizarMusica();
     const faseMax = Storage.faseMax();
 
-    // Jogar
+    // Cabeçalho do jogador (quem está jogando) + trocar jogador
+    this.cabecalhoJogador();
+
+    // Jogar (vai direto à grade de fases; a heroína vem do perfil)
     UI.botao(this, cx, 560, "▶  JOGAR", {
       cor: 0x7b2ff7,
       w: 520,
@@ -42,7 +45,7 @@ class MenuScene extends Phaser.Scene {
       onClick: () => {
         AudioFX.unlock();
         AudioFX.sincronizarMusica();
-        Util.trocarCena(this, "HeroScene");
+        Util.trocarCena(this, "StageScene", { heroId: Storage.getHeroiId() });
       },
     });
 
@@ -107,6 +110,44 @@ class MenuScene extends Phaser.Scene {
         fontStyle: "bold",
       })
       .setOrigin(0.5);
+  }
+
+  /** Faixa do topo: avatar + nome do jogador atual e botão "trocar jogador". */
+  cabecalhoJogador() {
+    const meta = Storage.perfilAtual();
+    if (!meta) return;
+    const heroi = getHeroi(meta.heroiId);
+
+    // avatar (toque → trocar avatar)
+    let av;
+    if (this.textures.exists(heroi.img)) {
+      av = this.add.image(56, 60, heroi.img).setDisplaySize(72, 72);
+    } else {
+      av = this.add.text(56, 60, heroi.emoji, { fontSize: "54px" }).setOrigin(0.5);
+    }
+    av.setInteractive({ useHandCursor: true });
+    av.on("pointerdown", () => {
+      AudioFX.unlock();
+      Util.trocarCena(this, "HeroScene");
+    });
+    // nome
+    this.add
+      .text(102, 60, meta.nome, {
+        fontFamily: UI.FONT,
+        fontSize: "34px",
+        fontStyle: "bold",
+        color: "#ffffff",
+      })
+      .setOrigin(0, 0.5);
+
+    // trocar jogador
+    UI.botao(this, GAME_WIDTH - 150, 60, "🔄 Trocar", {
+      cor: 0x2a2a3a,
+      w: 250,
+      h: 80,
+      tamFonte: 28,
+      onClick: () => Util.trocarCena(this, "ProfileScene"),
+    });
   }
 
   decorRaio(x, y, drift) {
