@@ -46,10 +46,15 @@ class HeroScene extends Phaser.Scene {
     g.strokeRoundedRect(-w / 2, -h / 2, w, h, 24);
     cont.add(g);
 
-    // avatar
-    const av = this.add
-      .text(-w / 2 + 95, 0, heroi.emoji, { fontSize: "110px" })
-      .setOrigin(0.5);
+    // avatar (figura ilustrada, com fallback para emoji)
+    let av;
+    if (this.textures.exists(heroi.img)) {
+      av = this.add.image(-w / 2 + 95, 0, heroi.img).setDisplaySize(150, 150);
+    } else {
+      av = this.add
+        .text(-w / 2 + 95, 0, heroi.emoji, { fontSize: "110px" })
+        .setOrigin(0.5);
+    }
     cont.add(av);
 
     // nome
@@ -62,10 +67,11 @@ class HeroScene extends Phaser.Scene {
     cont.add(nome);
 
     // descrição
-    const desc = this.add.text(-w / 2 + 200, 10, heroi.descricao, {
+    const desc = this.add.text(-w / 2 + 200, 6, heroi.descricao, {
       fontFamily: UI.FONT,
-      fontSize: "30px",
+      fontSize: "26px",
       color: "#dddddd",
+      wordWrap: { width: w / 2 + 60 },
     });
     cont.add(desc);
 

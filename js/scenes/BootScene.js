@@ -7,6 +7,16 @@ class BootScene extends Phaser.Scene {
     super("BootScene");
   }
 
+  preload() {
+    // Figuras dos heróis (SVG ilustrado — DiceBear/Lorelei, CC0).
+    HEROIS.forEach((h) => {
+      this.load.svg(h.img, `assets/herois/${h.file || h.id}.svg`, {
+        width: 256,
+        height: 256,
+      });
+    });
+  }
+
   create() {
     this.gerarFundo();
     this.gerarBrilho();

@@ -68,9 +68,15 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(1, 0);
 
-    // badge do herói escolhido (avatar + nome) no topo-esquerdo
-    this.add.text(40, 96, this.heroi.emoji, { fontSize: "48px" }).setOrigin(0.5, 0);
-    this.add.text(76, 104, this.heroi.nome, {
+    // badge do herói escolhido (figura + nome) no topo-esquerdo
+    if (this.textures.exists(this.heroi.img)) {
+      this.add.image(64, 124, this.heroi.img).setDisplaySize(64, 64);
+    } else {
+      this.add
+        .text(64, 96, this.heroi.emoji, { fontSize: "48px" })
+        .setOrigin(0.5, 0);
+    }
+    this.add.text(104, 104, this.heroi.nome, {
       fontFamily: UI.FONT,
       fontSize: "30px",
       fontStyle: "bold",
