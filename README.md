@@ -96,13 +96,11 @@ const JOGO = { faixaFator: { min: 1, max: 10 }, tempoResposta: 10, numInimigos: 
 ## 🙏 Créditos
 
 - **[Phaser 3](https://phaser.io/)** — motor do jogo (vendorizado em `vendor/`).
-- Figuras das heroínas geradas com **[DiceBear](https://www.dicebear.com/)**:
-  - **Rubi** — estilo **[Avataaars](https://www.dicebear.com/styles/avataaars/)** (por Pablo
-    Stanley) — uso livre, inclusive comercial.
-  - **Lorena** e **Mel** — estilo **[Lorelei](https://www.dicebear.com/styles/lorelei/)** (por
-    Lisa Wischofsky) — **CC0 1.0** (domínio público).
-  - Geradas no momento do desenvolvimento e embutidas como SVG; o jogo não depende do
-    DiceBear em runtime.
+- Figuras das heroínas (Rubi, Lorena e Mel) geradas com
+  **[DiceBear](https://www.dicebear.com/)**, estilo
+  **[Avataaars](https://www.dicebear.com/styles/avataaars/)** (por Pablo Stanley) — uso livre,
+  inclusive comercial. Geradas no momento do desenvolvimento e embutidas como SVG; o jogo não
+  depende do DiceBear em runtime.
 
 ---
 
