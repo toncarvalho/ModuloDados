@@ -9,6 +9,7 @@ class GameScene extends Phaser.Scene {
 
   init(data) {
     this.fase = getFase(data.faseId || 1);
+    this.heroi = getHeroi((data && data.heroId) || Storage.getHeroiId());
 
     this.vidas = 3;
     this.pontuacao = 0;
@@ -57,14 +58,24 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5, 0);
 
+    const corHeroi = "#" + this.heroi.cor.toString(16).padStart(6, "0");
     this.txtCombo = this.add
       .text(GAME_WIDTH - 30, 40, "", {
         fontFamily: UI.FONT,
         fontSize: "38px",
         fontStyle: "bold",
-        color: "#2ff7e6",
+        color: corHeroi,
       })
       .setOrigin(1, 0);
+
+    // badge do herói escolhido (avatar + nome) no topo-esquerdo
+    this.add.text(40, 96, this.heroi.emoji, { fontSize: "48px" }).setOrigin(0.5, 0);
+    this.add.text(76, 104, this.heroi.nome, {
+      fontFamily: UI.FONT,
+      fontSize: "30px",
+      fontStyle: "bold",
+      color: corHeroi,
+    });
 
     // botão mudo
     this.btnMute = this.add
@@ -478,6 +489,7 @@ class GameScene extends Phaser.Scene {
         pontuacao: this.pontuacao,
         maxCombo: this.maxCombo,
         faseId: this.fase.id,
+        heroId: this.heroi.id,
         temProxima,
       });
     });
@@ -497,6 +509,7 @@ class GameScene extends Phaser.Scene {
         pontuacao: this.pontuacao,
         maxCombo: this.maxCombo,
         faseId: this.fase.id,
+        heroId: this.heroi.id,
         temProxima: false,
       });
     });

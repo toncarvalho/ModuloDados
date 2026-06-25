@@ -10,6 +10,8 @@ const Storage = (() => {
     muted: false,
     // fase máxima desbloqueada (1-based) — única progressão
     faseDesbloqueada: 1,
+    // herói selecionado (1-based)
+    heroiId: 1,
   });
 
   function load() {
@@ -52,6 +54,13 @@ const Storage = (() => {
     /** Maior fase desbloqueada (1-based). */
     faseMax() {
       return state.faseDesbloqueada || 1;
+    },
+    setHeroi(id) {
+      state.heroiId = id;
+      save(state);
+    },
+    getHeroiId() {
+      return state.heroiId || 1;
     },
     setMuted(muted) {
       state.muted = !!muted;

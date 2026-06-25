@@ -62,7 +62,10 @@ class ResultScene extends Phaser.Scene {
         w: 520,
         h: 120,
         onClick: () =>
-          this.scene.start("GameScene", { faseId: d.faseId + 1 }),
+          this.scene.start("GameScene", {
+            faseId: d.faseId + 1,
+            heroId: d.heroId,
+          }),
       });
       y += 150;
     } else {
@@ -70,7 +73,8 @@ class ResultScene extends Phaser.Scene {
         cor: 0x7b2ff7,
         w: 520,
         h: 120,
-        onClick: () => this.scene.start("GameScene", { faseId: d.faseId }),
+        onClick: () =>
+          this.scene.start("GameScene", { faseId: d.faseId, heroId: d.heroId }),
       });
       y += 150;
     }
@@ -79,7 +83,7 @@ class ResultScene extends Phaser.Scene {
       cor: 0xff3ea5,
       w: 520,
       h: 110,
-      onClick: () => this.scene.start("StageScene"),
+      onClick: () => this.scene.start("StageScene", { heroId: d.heroId }),
     });
     y += 140;
 

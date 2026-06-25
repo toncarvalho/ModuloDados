@@ -7,6 +7,10 @@ class StageScene extends Phaser.Scene {
     super("StageScene");
   }
 
+  init(data) {
+    this.heroId = (data && data.heroId) || Storage.getHeroiId();
+  }
+
   create() {
     const cx = GAME_WIDTH / 2;
     this.add.image(cx, GAME_HEIGHT / 2, "bg");
@@ -108,7 +112,7 @@ class StageScene extends Phaser.Scene {
       cont.on("pointerdown", () => {
         cont.setScale(0.96);
         AudioFX.unlock();
-        this.scene.start("GameScene", { faseId: fase.id });
+        this.scene.start("GameScene", { faseId: fase.id, heroId: this.heroId });
       });
       cont.on("pointerup", () => cont.setScale(1.05));
     } else {
