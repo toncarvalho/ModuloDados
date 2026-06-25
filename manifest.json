@@ -1,0 +1,19 @@
+{
+  "name": "Idol Math — Tabuada Kpop Metal",
+  "short_name": "Idol Math",
+  "description": "Jogo de tabuada com estética kpop e um toque de heavy metal. Várias fases, dificuldades e chefões!",
+  "lang": "pt-BR",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0d12",
+  "theme_color": "#ff3ea5",
+  "icons": [
+    {
+      "src": "assets/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
