@@ -35,7 +35,16 @@ const config = {
   fps: { target: 60, min: 30 },
   input: { activePointers: 1 },
   disableContextMenu: true,
-  scene: [BootScene, MenuScene, HeroScene, StageScene, GameScene, ResultScene],
+  scene: [
+    BootScene,
+    MenuScene,
+    HeroScene,
+    StageScene,
+    GameScene,
+    ResultScene,
+    SettingsScene,
+    TrainScene,
+  ],
 };
 
 window.addEventListener("load", () => {

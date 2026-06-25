@@ -9,6 +9,7 @@ class HeroScene extends Phaser.Scene {
 
   create() {
     const cx = GAME_WIDTH / 2;
+    this.cameras.main.fadeIn(180, 13, 13, 18);
     this.add.image(cx, GAME_HEIGHT / 2, "bg");
 
     UI.titulo(this, cx, 170, "ESCOLHA", 78, "#ff3ea5");
@@ -28,7 +29,7 @@ class HeroScene extends Phaser.Scene {
       w: 360,
       h: 90,
       tamFonte: 34,
-      onClick: () => this.scene.start("MenuScene"),
+      onClick: () => Util.trocarCena(this, "MenuScene"),
     });
   }
 
@@ -100,7 +101,7 @@ class HeroScene extends Phaser.Scene {
       AudioFX.unlock();
       AudioFX.acerto();
       Storage.setHeroi(heroi.id);
-      this.scene.start("StageScene", { heroId: heroi.id });
+      Util.trocarCena(this, "StageScene", { heroId: heroi.id });
     });
     cont.on("pointerup", () => cont.setScale(1.03));
   }

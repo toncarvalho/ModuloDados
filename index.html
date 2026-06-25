@@ -25,6 +25,7 @@
   <script src="js/core/MathEngine.js"></script>
   <script src="js/core/Audio.js"></script>
   <script src="js/core/UI.js"></script>
+  <script src="js/core/Util.js"></script>
 
   <!-- Data -->
   <script src="js/data/fases.js"></script>
@@ -37,8 +38,19 @@
   <script src="js/scenes/StageScene.js"></script>
   <script src="js/scenes/GameScene.js"></script>
   <script src="js/scenes/ResultScene.js"></script>
+  <script src="js/scenes/SettingsScene.js"></script>
+  <script src="js/scenes/TrainScene.js"></script>
 
   <!-- Bootstrap -->
   <script src="js/main.js"></script>
+
+  <!-- Service Worker (PWA offline) -->
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

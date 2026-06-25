@@ -19,8 +19,15 @@ resposta certa para atacar, encadeie **combos**, não perca suas **vidas** ❤�
 - 🔓 Cada fase **desbloqueia a próxima** ao ser vencida (progresso salvo).
 - 👑 **Chefões** temáticos com barra de HP no fim de cada fase.
 - 🔥 Combos, pontuação, vidas e **recorde salvo** no aparelho (localStorage).
-- 🎵 Efeitos sonoros gerados em tempo real (Web Audio) — sem arquivos de áudio.
-- 🚀 **Sem build, sem npm**: só HTML + JS. Phaser vem por CDN.
+- ⭐ **Estrelas por fase** (1–3) e relatório de fim de fase (precisão + fatos a treinar).
+- 🧠 **Repetição inteligente**: as contas que você mais erra aparecem com mais frequência.
+- 📚 **Modo Treino**: pratique uma tabuada (ou Mix) sem tempo e sem perder vida.
+- 💀 **Boss Rush**: enfrente os 12 chefões em sequência (desbloqueia ao zerar a última fase).
+- ⏸️ **Pausa**, **dica no erro** (mostra a conta certa) e **transições suaves**.
+- 🎵 Música de fundo + efeitos (Web Audio, sem arquivos), **vibração** e **leitura em voz alta** —
+  tudo ligável/desligável em **Ajustes**.
+- 🚀 **Sem build, sem npm**: só HTML + JS, com **service worker** (funciona offline). Phaser
+  vendorizado localmente.
 
 ## ▶️ Como rodar
 

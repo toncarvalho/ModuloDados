@@ -1,6 +1,7 @@
 /**
  * GameScene — loop principal: perguntas de tabuada, combos, vidas,
- * inimigos comuns e, ao final, o chefão (modo isBoss).
+ * inimigos comuns e o chefão. Suporta o modo Boss Rush.
+ * Recursos: repetição inteligente, dica no erro, voz, vibração, pausa, estrelas.
  */
 class GameScene extends Phaser.Scene {
   constructor() {
@@ -8,10 +9,19 @@ class GameScene extends Phaser.Scene {
   }
 
   init(data) {
-    this.fase = getFase(data.faseId || 1);
+    this.bossRush = !!(data && data.bossRush);
     this.heroi = getHeroi((data && data.heroId) || Storage.getHeroiId());
 
-    this.vidas = 3;
+    if (this.bossRush) {
+      this.brIdx = 0;
+      this.fase = FASES[0];
+      this.vidas = 5;
+    } else {
+      this.fase = getFase((data && data.faseId) || 1);
+      this.vidas = 3;
+    }
+    this.vidasIniciais = this.vidas;
+
     this.pontuacao = 0;
     this.combo = 0;
     this.maxCombo = 0;
@@ -20,11 +30,18 @@ class GameScene extends Phaser.Scene {
     this.bossHp = 0;
     this.bossHpMax = 0;
     this.acabou = false;
+    this.pausado = false;
     this.botoesResposta = [];
+
+    // estatísticas da partida (relatório + repetição inteligente)
+    this.acertos = 0;
+    this.erros = 0;
+    this.errosFatos = []; // textos "7 × 8" errados nesta partida
   }
 
   create() {
     const cx = GAME_WIDTH / 2;
+    this.cameras.main.fadeIn(180, 13, 13, 18);
     this.add.image(cx, GAME_HEIGHT / 2, "bg").setTint(this.fase.corTema);
 
     this.particulas = this.add.particles(0, 0, "brilho", {
@@ -38,7 +55,10 @@ class GameScene extends Phaser.Scene {
 
     this.criarHUD();
     this.criarPalco();
-    this.proximoInimigo(true);
+    AudioFX.sincronizarMusica();
+
+    if (this.bossRush) this.iniciarChefao();
+    else this.proximoInimigo(true);
   }
 
   // ---------- HUD ----------
@@ -60,21 +80,19 @@ class GameScene extends Phaser.Scene {
 
     const corHeroi = "#" + this.heroi.cor.toString(16).padStart(6, "0");
     this.txtCombo = this.add
-      .text(GAME_WIDTH - 30, 40, "", {
+      .text(GAME_WIDTH - 30, 84, "", {
         fontFamily: UI.FONT,
-        fontSize: "38px",
+        fontSize: "34px",
         fontStyle: "bold",
         color: corHeroi,
       })
       .setOrigin(1, 0);
 
-    // badge do herói escolhido (figura + nome) no topo-esquerdo
+    // badge do herói (figura + nome) no topo-esquerdo
     if (this.textures.exists(this.heroi.img)) {
       this.add.image(64, 124, this.heroi.img).setDisplaySize(64, 64);
     } else {
-      this.add
-        .text(64, 96, this.heroi.emoji, { fontSize: "48px" })
-        .setOrigin(0.5, 0);
+      this.add.text(64, 96, this.heroi.emoji, { fontSize: "48px" }).setOrigin(0.5, 0);
     }
     this.add.text(104, 104, this.heroi.nome, {
       fontFamily: UI.FONT,
@@ -83,17 +101,12 @@ class GameScene extends Phaser.Scene {
       color: corHeroi,
     });
 
-    // botão mudo
-    this.btnMute = this.add
-      .text(GAME_WIDTH - 30, 110, Storage.isMuted() ? "🔇" : "🔊", {
-        fontSize: "40px",
-      })
+    // botão de pausa
+    this.btnPause = this.add
+      .text(GAME_WIDTH - 34, 30, "⏸", { fontSize: "44px" })
       .setOrigin(1, 0)
       .setInteractive({ useHandCursor: true });
-    this.btnMute.on("pointerdown", () => {
-      Storage.setMuted(!Storage.isMuted());
-      this.btnMute.setText(Storage.isMuted() ? "🔇" : "🔊");
-    });
+    this.btnPause.on("pointerdown", () => this.pausar());
 
     this.atualizarHUD();
   }
@@ -109,7 +122,7 @@ class GameScene extends Phaser.Scene {
     const cx = GAME_WIDTH / 2;
 
     this.txtFase = this.add
-      .text(cx, 130, `Fase ${this.fase.id}: ${this.fase.nome}`, {
+      .text(cx, 130, this.tituloFase(), {
         fontFamily: UI.FONT,
         fontSize: "32px",
         fontStyle: "bold",
@@ -117,7 +130,6 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // sprite do inimigo (emoji grande)
     this.inimigoSprite = this.add
       .text(cx, 360, this.fase.inimigoEmoji, { fontSize: "150px" })
       .setOrigin(0.5);
@@ -139,11 +151,9 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    // barra de HP / contador de inimigos
     this.hpBarBg = this.add.graphics();
     this.hpBar = this.add.graphics();
 
-    // pergunta
     this.txtPergunta = this.add
       .text(cx, 620, "", {
         fontFamily: UI.FONT,
@@ -154,8 +164,18 @@ class GameScene extends Phaser.Scene {
       .setOrigin(0.5);
     this.txtPergunta.setShadow(0, 0, "#2ff7e6", 10, true, true);
 
-    // barra de tempo: fundo arredondado desenhado UMA vez; o preenchimento é um
-    // retângulo escalado por frame (transform-only, sem retesselar caminho a cada tick).
+    // texto de dica (mostra a conta certa no erro)
+    this.txtDica = this.add
+      .text(cx, 690, "", {
+        fontFamily: UI.FONT,
+        fontSize: "40px",
+        fontStyle: "bold",
+        color: "#36d96b",
+      })
+      .setOrigin(0.5)
+      .setVisible(false);
+
+    // barra de tempo (retângulo escalado por frame)
     this.timerW = 500;
     this.timerX = GAME_WIDTH / 2 - this.timerW / 2;
     this.timerY = 730;
@@ -169,11 +189,13 @@ class GameScene extends Phaser.Scene {
       .setVisible(false);
     this.timerAtivo = false;
 
-    // pool de textos flutuantes ("+pontos"/"-1 ❤️") — reusa em vez de criar/destruir.
     this._floatPool = [];
-
-    // botões de resposta criados uma única vez (reaproveitados a cada pergunta)
     this.criarBotoesResposta();
+  }
+
+  tituloFase() {
+    if (this.bossRush) return `Boss Rush — ${this.brIdx + 1}/${FASES.length}`;
+    return `Fase ${this.fase.id}: ${this.fase.nome}`;
   }
 
   desenharHpBar() {
@@ -183,7 +205,6 @@ class GameScene extends Phaser.Scene {
     const y = 510;
     this.hpBarBg.clear();
     this.hpBar.clear();
-
     if (this.isBoss) {
       const frac = Phaser.Math.Clamp(this.bossHp / this.bossHpMax, 0, 1);
       this.hpBarBg.fillStyle(0x000000, 0.5);
@@ -192,30 +213,21 @@ class GameScene extends Phaser.Scene {
       this.hpBar.fillRoundedRect(x, y, w * frac, 28, 12);
       this.hpBarBg.lineStyle(2, 0xffffff, 0.6);
       this.hpBarBg.strokeRoundedRect(x, y, w, 28, 12);
-    } else {
-      // contador de inimigos restantes em "pontos"
-      this.hpBarBg.fillStyle(0x000000, 0.0);
     }
   }
 
   proximoInimigo(primeiro) {
     if (this.acabou) return;
-
     if (this.inimigosRestantes <= 0 && !this.isBoss) {
       this.iniciarChefao();
       return;
     }
-
     if (!this.isBoss) {
-      this.txtInimigoNome.setText(
-        `Inimigos: ${this.inimigosRestantes}`
-      );
+      this.txtInimigoNome.setText(`Inimigos: ${this.inimigosRestantes}`);
       this.inimigoSprite.setText(this.fase.inimigoEmoji).setFontSize(150);
     }
-
     this.desenharHpBar();
     if (!primeiro) {
-      // animação de entrada do novo inimigo
       this.inimigoSprite.setScale(0);
       this.tweens.add({
         targets: this.inimigoSprite,
@@ -233,10 +245,11 @@ class GameScene extends Phaser.Scene {
     this.bossHpMax = JOGO.bossHp;
     this.bossHp = this.bossHpMax;
 
+    this.cameras.main.setBackgroundColor(0x0d0d12);
     this.inimigoSprite.setText(boss.emoji).setFontSize(190);
     this.txtInimigoNome.setText(`⚠️ ${boss.nome} ⚠️`);
+    this.txtFase.setText(this.tituloFase());
 
-    // banner dramático
     const banner = this.add
       .text(GAME_WIDTH / 2, 360, `${boss.emoji}\nCHEFÃO!\n${boss.nome}`, {
         fontFamily: UI.FONT,
@@ -264,23 +277,26 @@ class GameScene extends Phaser.Scene {
   // ---------- Perguntas ----------
   novaPergunta() {
     if (this.acabou) return;
-    this.q = MathEngine.gerarPergunta(this.fase.tabuadas, JOGO.faixaFator);
+    this.txtDica.setVisible(false);
+    this.q = MathEngine.gerarPergunta(
+      this.fase.tabuadas,
+      JOGO.faixaFator,
+      Storage.getFatos()
+    );
     this.opcoes = MathEngine.gerarOpcoes(this.q.resposta);
     this.txtPergunta.setText(`${this.q.texto} = ?`);
+    Util.falar(`${this.q.a} vezes ${this.q.b}`);
 
     this.atualizarBotoesResposta();
     this.iniciarTimer();
   }
 
-  // Cria os 4 botões UMA vez (posições fixas 2×2). Performance: evita
-  // destruir/recriar objetos Text+Graphics a cada pergunta (causa de micro-travadas).
   criarBotoesResposta() {
     const cx = GAME_WIDTH / 2;
     const baseY = 880;
     const dx = 240;
     const dy = 160;
     this.coresBotoes = [0xff3ea5, 0x7b2ff7, 0x2ff7e6, 0xffd23e];
-
     for (let i = 0; i < 4; i++) {
       const col = i % 2;
       const row = Math.floor(i / 2);
@@ -299,7 +315,6 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  // Reaproveita os botões existentes: atualiza rótulo, cor-base e ação.
   atualizarBotoesResposta() {
     this.opcoes.forEach((valor, i) => {
       const b = this.botoesResposta[i];
@@ -311,8 +326,6 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  // Oculta/desabilita os botões sem destruí-los (banner do chefão, fim de jogo).
-  // Também esconde a barra de tempo (só é chamado ao limpar o palco, não no feedback).
   limparBotoes() {
     this.botoesResposta.forEach((b) => b.setVisible(false).disableInteractive());
     this.pararTimer();
@@ -323,9 +336,8 @@ class GameScene extends Phaser.Scene {
   // ---------- Timer ----------
   iniciarTimer() {
     this.pararTimer();
-    const segundos = JOGO.tempoResposta;
+    const segundos = Storage.getConfig().timer ? JOGO.tempoResposta : null;
     if (!segundos) {
-      // fácil = sem timer
       this.timerBarBg.setVisible(false);
       this.timerFill.setVisible(false);
       return;
@@ -343,9 +355,8 @@ class GameScene extends Phaser.Scene {
     this.timerAtivo = false;
   }
 
-  // Loop do timer dirigido pelo frame (delta) — suave e barato (só transform).
   update(time, delta) {
-    if (!this.timerAtivo || this.acabou || this.respondendo) return;
+    if (this.pausado || !this.timerAtivo || this.acabou || this.respondendo) return;
     this.tempoRestante -= delta;
     const frac = Phaser.Math.Clamp(this.tempoRestante / this.tempoTotal, 0, 1);
     this.timerFill.scaleX = frac;
@@ -364,9 +375,9 @@ class GameScene extends Phaser.Scene {
 
   // ---------- Respostas ----------
   responder(valor, botao) {
-    if (this.acabou || this.respondendo) return;
+    if (this.acabou || this.respondendo || this.pausado) return;
     this.pararTimer();
-
+    Storage.registrarResposta(this.q.a, this.q.b, valor === this.q.resposta);
     if (valor === this.q.resposta) {
       this.acertar(botao);
     } else {
@@ -377,19 +388,19 @@ class GameScene extends Phaser.Scene {
 
   acertar(botao) {
     this.respondendo = true;
+    this.acertos += 1;
     if (botao) botao.setCor(0x36d96b);
     this.combo += 1;
     this.maxCombo = Math.max(this.maxCombo, this.combo);
-
     const base = this.isBoss ? 20 : 10;
     this.pontuacao += base * this.combo;
 
     AudioFX.acerto();
     if (this.combo >= 3) AudioFX.combo();
-
-    // efeito de golpe no inimigo
-    this.particulas.emitParticleAt(this.inimigoSprite.x, this.inimigoSprite.y, 14);
     AudioFX.golpe();
+    Util.vibrar(30);
+
+    this.particulas.emitParticleAt(this.inimigoSprite.x, this.inimigoSprite.y, 14);
     this.tweens.add({
       targets: this.inimigoSprite,
       scale: 0.8,
@@ -406,11 +417,8 @@ class GameScene extends Phaser.Scene {
       if (this.isBoss) {
         this.bossHp -= 1;
         this.desenharHpBar();
-        if (this.bossHp <= 0) {
-          this.vitoria();
-        } else {
-          this.novaPergunta();
-        }
+        if (this.bossHp <= 0) this.chefaoDerrotado();
+        else this.novaPergunta();
       } else {
         this.inimigosRestantes -= 1;
         this.proximoInimigo(false);
@@ -420,85 +428,161 @@ class GameScene extends Phaser.Scene {
 
   errar(botao) {
     this.respondendo = true;
+    this.erros += 1;
+    this.errosFatos.push(this.q.texto);
     this.combo = 0;
     this.vidas -= 1;
     AudioFX.erro();
+    Util.vibrar([60, 40, 60]);
     this.cameras.main.shake(250, 0.012);
     this.cameras.main.flash(150, 120, 0, 0);
 
-    // destaca a resposta correta
+    // destaca a resposta correta + dica de reforço
     this.botoesResposta.forEach((b) => {
       if (b.label.text === `${this.q.resposta}`) b.setCor(0x36d96b);
     });
+    this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
     this.flutuarTexto("-1 ❤️", "#ff5050");
     this.atualizarHUD();
 
-    this.time.delayedCall(450, () => {
+    this.time.delayedCall(750, () => {
       this.respondendo = false;
-      if (this.vidas <= 0) {
-        this.derrota();
-      } else {
-        this.novaPergunta();
-      }
+      if (this.vidas <= 0) this.derrota();
+      else this.novaPergunta();
     });
   }
 
+  // chefão derrotado: Boss Rush avança; normal → vitória
+  chefaoDerrotado() {
+    if (this.bossRush && this.brIdx < FASES.length - 1) {
+      this.brIdx += 1;
+      this.fase = FASES[this.brIdx];
+      this.isBoss = false;
+      this.iniciarChefao();
+    } else {
+      this.vitoria();
+    }
+  }
+
   flutuarTexto(str, cor) {
-    // Reusa um texto inativo do pool; cria um novo só se todos estiverem em uso.
     let t = this._floatPool.find((o) => !o.visible);
     if (!t) {
       t = this.add
-        .text(0, 0, "", {
-          fontFamily: UI.FONT,
-          fontSize: "60px",
-          fontStyle: "bold",
-        })
+        .text(0, 0, "", { fontFamily: UI.FONT, fontSize: "60px", fontStyle: "bold" })
         .setOrigin(0.5)
         .setDepth(80);
       this._floatPool.push(t);
     }
     t.setText(str)
       .setColor(cor)
-      .setPosition(GAME_WIDTH / 2, 700)
+      .setPosition(GAME_WIDTH / 2, 760)
       .setAlpha(1)
       .setVisible(true);
     this.tweens.add({
       targets: t,
-      y: 580,
+      y: 640,
       alpha: 0,
       duration: 700,
       onComplete: () => t.setVisible(false),
     });
   }
 
+  // ---------- Pausa ----------
+  pausar() {
+    if (this.acabou || this.pausado) return;
+    this.pausado = true;
+    this.time.paused = true;
+    this.tweens.pauseAll();
+    Util.pararVoz();
+
+    const cx = GAME_WIDTH / 2;
+    this.overlayPausa = this.add.container(0, 0).setDepth(200);
+    const g = this.add.graphics();
+    g.fillStyle(0x0d0d12, 0.94);
+    g.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    this.overlayPausa.add(g);
+    this.overlayPausa.add(UI.titulo(this, cx, 420, "PAUSA", 90, "#2ff7e6"));
+    this.overlayPausa.add(
+      UI.botao(this, cx, 600, "▶  Continuar", {
+        cor: 0x36d96b,
+        w: 460,
+        h: 120,
+        onClick: () => this.retomar(),
+      })
+    );
+    this.overlayPausa.add(
+      UI.botao(this, cx, 750, "🗺  Fases", {
+        cor: 0xff3ea5,
+        w: 460,
+        h: 110,
+        onClick: () => Util.trocarCena(this, "StageScene", { heroId: this.heroi.id }),
+      })
+    );
+    this.overlayPausa.add(
+      UI.botao(this, cx, 890, "🏠  Menu", {
+        cor: 0x444455,
+        w: 460,
+        h: 110,
+        onClick: () => Util.trocarCena(this, "MenuScene"),
+      })
+    );
+  }
+
+  retomar() {
+    if (!this.pausado) return;
+    this.pausado = false;
+    this.time.paused = false;
+    this.tweens.resumeAll();
+    if (this.overlayPausa) {
+      this.overlayPausa.destroy();
+      this.overlayPausa = null;
+    }
+  }
+
   // ---------- Fim ----------
+  calcularEstrelas() {
+    if (this.bossRush) return 3;
+    return Phaser.Math.Clamp(this.vidas, 1, 3);
+  }
+
   vitoria() {
     if (this.acabou) return;
     this.acabou = true;
     this.pararTimer();
     this.limparBotoes();
     AudioFX.vitoria();
+    Util.vibrar([40, 30, 80]);
 
-    // bônus por vidas restantes
     this.pontuacao += this.vidas * 50 + this.maxCombo * 5;
     Storage.setMelhorPontuacao(this.pontuacao);
 
-    const proxima = this.fase.id + 1;
-    const temProxima = existeFase(proxima);
-    if (temProxima) {
-      Storage.desbloquearFase(proxima);
+    const estrelas = this.calcularEstrelas();
+    let temProxima = false;
+    if (this.bossRush) {
+      Storage.desbloquearBossRush();
+    } else {
+      Storage.setEstrelas(this.fase.id, estrelas);
+      const proxima = this.fase.id + 1;
+      temProxima = existeFase(proxima);
+      if (temProxima) Storage.desbloquearFase(proxima);
+      else Storage.desbloquearBossRush(); // zerou a última → libera Boss Rush
     }
 
-    this.time.delayedCall(700, () => {
+    this.time.delayedCall(700, () =>
       this.scene.start("ResultScene", {
         venceu: true,
+        bossRush: this.bossRush,
         pontuacao: this.pontuacao,
         maxCombo: this.maxCombo,
         faseId: this.fase.id,
         heroId: this.heroi.id,
+        estrelas,
+        acertos: this.acertos,
+        erros: this.erros,
+        errosFatos: this.errosFatos,
         temProxima,
-      });
-    });
+      })
+    );
   }
 
   derrota() {
@@ -509,15 +593,20 @@ class GameScene extends Phaser.Scene {
     AudioFX.derrota();
     Storage.setMelhorPontuacao(this.pontuacao);
 
-    this.time.delayedCall(700, () => {
+    this.time.delayedCall(700, () =>
       this.scene.start("ResultScene", {
         venceu: false,
+        bossRush: this.bossRush,
         pontuacao: this.pontuacao,
         maxCombo: this.maxCombo,
         faseId: this.fase.id,
         heroId: this.heroi.id,
+        estrelas: 0,
+        acertos: this.acertos,
+        erros: this.erros,
+        errosFatos: this.errosFatos,
         temProxima: false,
-      });
-    });
+      })
+    );
   }
 }
