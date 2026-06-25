@@ -1,0 +1,93 @@
+/**
+ * UI — helpers de interface reutilizados por todas as cenas.
+ * Botões neon "kpop/metal" com alvos de toque grandes (mobile-first).
+ */
+const UI = (() => {
+  const FONT = '"Trebuchet MS", "Segoe UI", sans-serif';
+
+  /**
+   * Cria um botão retangular neon com texto.
+   * @returns {Phaser.GameObjects.Container}
+   */
+  function botao(scene, x, y, label, opts = {}) {
+    const w = opts.w || 520;
+    const h = opts.h || 110; // >= 64px de alvo de toque
+    const corFundo = opts.cor ?? 0xff3ea5;
+    const corTexto = opts.corTexto || "#ffffff";
+    const tamFonte = opts.tamFonte || 40;
+
+    const cont = scene.add.container(x, y);
+
+    const g = scene.add.graphics();
+    desenharBotao(g, w, h, corFundo, 1);
+
+    const txt = scene.add
+      .text(0, 0, label, {
+        fontFamily: FONT,
+        fontSize: `${tamFonte}px`,
+        fontStyle: "bold",
+        color: corTexto,
+        align: "center",
+      })
+      .setOrigin(0.5);
+
+    cont.add([g, txt]);
+    cont.setSize(w, h);
+    cont.setInteractive(
+      new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
+      Phaser.Geom.Rectangle.Contains
+    );
+
+    cont.on("pointerover", () => cont.setScale(1.04));
+    cont.on("pointerout", () => cont.setScale(1));
+    cont.on("pointerdown", () => {
+      cont.setScale(0.96);
+      AudioFX.unlock();
+    });
+    cont.on("pointerup", () => {
+      cont.setScale(1.04);
+      if (opts.onClick) opts.onClick();
+    });
+
+    // permite trocar a cor depois (feedback acerto/erro)
+    cont.setCor = (cor, alpha = 1) => {
+      g.clear();
+      desenharBotao(g, w, h, cor, alpha);
+    };
+    cont.label = txt;
+    return cont;
+  }
+
+  function desenharBotao(g, w, h, cor, alpha) {
+    const r = 22;
+    // sombra/borda metal
+    g.fillStyle(0x000000, 0.35 * alpha);
+    g.fillRoundedRect(-w / 2 + 4, -h / 2 + 6, w, h, r);
+    // corpo
+    g.fillStyle(cor, alpha);
+    g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
+    // brilho superior
+    g.fillStyle(0xffffff, 0.18 * alpha);
+    g.fillRoundedRect(-w / 2 + 8, -h / 2 + 8, w - 16, h * 0.32, r * 0.7);
+    // borda neon
+    g.lineStyle(3, 0xffffff, 0.5 * alpha);
+    g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+  }
+
+  /** Texto com brilho neon padrão. */
+  function titulo(scene, x, y, str, tam = 84, cor = "#ffffff") {
+    const t = scene.add
+      .text(x, y, str, {
+        fontFamily: FONT,
+        fontSize: `${tam}px`,
+        fontStyle: "bold",
+        color: cor,
+        align: "center",
+      })
+      .setOrigin(0.5);
+    t.setShadow(0, 0, "#ff3ea5", 18, true, true);
+    return t;
+  }
+
+  return { botao, titulo, FONT };
+})();
