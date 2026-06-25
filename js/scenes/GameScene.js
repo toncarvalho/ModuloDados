@@ -8,15 +8,13 @@ class GameScene extends Phaser.Scene {
   }
 
   init(data) {
-    this.stage = getStage(data.stageId || 1);
-    this.dificuldade = data.dificuldade || "facil";
-    this.dif = DIFICULDADES[this.dificuldade];
+    this.fase = getFase(data.faseId || 1);
 
     this.vidas = 3;
     this.pontuacao = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.inimigosRestantes = this.stage.numInimigos;
+    this.inimigosRestantes = JOGO.numInimigos;
     this.isBoss = false;
     this.bossHp = 0;
     this.bossHpMax = 0;
@@ -26,7 +24,7 @@ class GameScene extends Phaser.Scene {
 
   create() {
     const cx = GAME_WIDTH / 2;
-    this.add.image(cx, GAME_HEIGHT / 2, "bg").setTint(this.stage.corTema);
+    this.add.image(cx, GAME_HEIGHT / 2, "bg").setTint(this.fase.corTema);
 
     this.particulas = this.add.particles(0, 0, "brilho", {
       speed: { min: 120, max: 360 },
@@ -94,7 +92,7 @@ class GameScene extends Phaser.Scene {
     const cx = GAME_WIDTH / 2;
 
     this.txtFase = this.add
-      .text(cx, 130, `Fase ${this.stage.id}: ${this.stage.nome}`, {
+      .text(cx, 130, `Fase ${this.fase.id}: ${this.fase.nome}`, {
         fontFamily: UI.FONT,
         fontSize: "32px",
         fontStyle: "bold",
@@ -104,7 +102,7 @@ class GameScene extends Phaser.Scene {
 
     // sprite do inimigo (emoji grande)
     this.inimigoSprite = this.add
-      .text(cx, 360, this.stage.inimigoEmoji, { fontSize: "150px" })
+      .text(cx, 360, this.fase.inimigoEmoji, { fontSize: "150px" })
       .setOrigin(0.5);
     this.tweens.add({
       targets: this.inimigoSprite,
@@ -195,7 +193,7 @@ class GameScene extends Phaser.Scene {
       this.txtInimigoNome.setText(
         `Inimigos: ${this.inimigosRestantes}`
       );
-      this.inimigoSprite.setText(this.stage.inimigoEmoji).setFontSize(150);
+      this.inimigoSprite.setText(this.fase.inimigoEmoji).setFontSize(150);
     }
 
     this.desenharHpBar();
@@ -214,8 +212,8 @@ class GameScene extends Phaser.Scene {
 
   iniciarChefao() {
     this.isBoss = true;
-    const boss = this.stage.boss;
-    this.bossHpMax = Math.ceil(boss.hp * this.dif.bossHpMult);
+    const boss = this.fase.boss;
+    this.bossHpMax = JOGO.bossHp;
     this.bossHp = this.bossHpMax;
 
     this.inimigoSprite.setText(boss.emoji).setFontSize(190);
@@ -249,7 +247,7 @@ class GameScene extends Phaser.Scene {
   // ---------- Perguntas ----------
   novaPergunta() {
     if (this.acabou) return;
-    this.q = MathEngine.gerarPergunta(this.stage.tabuadas, this.dif.faixaFator);
+    this.q = MathEngine.gerarPergunta(this.fase.tabuadas, JOGO.faixaFator);
     this.opcoes = MathEngine.gerarOpcoes(this.q.resposta);
     this.txtPergunta.setText(`${this.q.texto} = ?`);
 
@@ -308,7 +306,7 @@ class GameScene extends Phaser.Scene {
   // ---------- Timer ----------
   iniciarTimer() {
     this.pararTimer();
-    const segundos = this.dif.tempoResposta;
+    const segundos = JOGO.tempoResposta;
     if (!segundos) {
       // fácil = sem timer
       this.timerBarBg.setVisible(false);
@@ -468,9 +466,10 @@ class GameScene extends Phaser.Scene {
     this.pontuacao += this.vidas * 50 + this.maxCombo * 5;
     Storage.setMelhorPontuacao(this.pontuacao);
 
-    const proxima = this.stage.id + 1;
-    if (getStage(proxima).id === proxima) {
-      Storage.desbloquearFase(this.dificuldade, proxima);
+    const proxima = this.fase.id + 1;
+    const temProxima = existeFase(proxima);
+    if (temProxima) {
+      Storage.desbloquearFase(proxima);
     }
 
     this.time.delayedCall(700, () => {
@@ -478,9 +477,8 @@ class GameScene extends Phaser.Scene {
         venceu: true,
         pontuacao: this.pontuacao,
         maxCombo: this.maxCombo,
-        stageId: this.stage.id,
-        dificuldade: this.dificuldade,
-        temProxima: getStage(proxima).id === proxima,
+        faseId: this.fase.id,
+        temProxima,
       });
     });
   }
@@ -498,8 +496,7 @@ class GameScene extends Phaser.Scene {
         venceu: false,
         pontuacao: this.pontuacao,
         maxCombo: this.maxCombo,
-        stageId: this.stage.id,
-        dificuldade: this.dificuldade,
+        faseId: this.fase.id,
         temProxima: false,
       });
     });

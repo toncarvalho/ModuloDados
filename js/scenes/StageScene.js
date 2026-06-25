@@ -1,91 +1,122 @@
 /**
- * StageScene — seleção de fase. Mostra fases bloqueadas/desbloqueadas
- * conforme o progresso salvo para a dificuldade escolhida.
+ * StageScene — seleção de fase em grade (3×4) para as 12 fases.
+ * Fases bloqueadas/desbloqueadas conforme o progresso salvo (único contador).
  */
 class StageScene extends Phaser.Scene {
   constructor() {
     super("StageScene");
   }
 
-  init(data) {
-    this.dificuldade = data.dificuldade || "facil";
-  }
-
   create() {
     const cx = GAME_WIDTH / 2;
     this.add.image(cx, GAME_HEIGHT / 2, "bg");
 
-    const d = DIFICULDADES[this.dificuldade];
-    UI.titulo(this, cx, 150, "FASES", 90, "#ff3ea5");
+    UI.titulo(this, cx, 120, "FASES", 84, "#ff3ea5");
     this.add
-      .text(cx, 240, `Dificuldade: ${d.emoji} ${d.nome}`, {
+      .text(cx, 200, "Cada fase treina uma tabuada", {
         fontFamily: UI.FONT,
-        fontSize: "34px",
+        fontSize: "30px",
         color: "#ffd23e",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
 
-    const maxDesbloqueada = Storage.faseDesbloqueada(this.dificuldade);
+    const faseMax = Storage.faseMax();
 
-    STAGES.forEach((stage, i) => {
-      const y = 380 + i * 220;
-      const desbloqueada = stage.id <= maxDesbloqueada;
-      this.cardFase(cx, y, stage, desbloqueada);
+    // grade 3 colunas × 4 linhas
+    const cols = 3;
+    const x0 = 160;
+    const dx = 200;
+    const y0 = 360;
+    const dy = 190;
+
+    FASES.forEach((fase, i) => {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      const x = x0 + col * dx;
+      const y = y0 + row * dy;
+      const desbloqueada = fase.id <= faseMax;
+      this.tileFase(x, y, fase, desbloqueada);
     });
 
-    UI.botao(this, cx, 1180, "↩  Voltar", {
+    UI.botao(this, cx, 1210, "↩  Menu", {
       cor: 0x444455,
       w: 360,
-      h: 100,
+      h: 90,
+      tamFonte: 34,
       onClick: () => this.scene.start("MenuScene"),
     });
   }
 
-  cardFase(cx, y, stage, desbloqueada) {
-    const w = 600;
-    const h = 180;
+  /** Rótulo curto do foco da fase: "Tab. 7", "1–3" ou "Mix". */
+  rotuloFoco(fase) {
+    const t = fase.tabuadas;
+    if (t.length >= 10) return "Mix";
+    if (t.length === 1) return `Tab. ${t[0]}`;
+    return `Tab. ${t[0]}–${t[t.length - 1]}`;
+  }
+
+  tileFase(x, y, fase, desbloqueada) {
+    const w = 176;
+    const h = 168;
+    const cont = this.add.container(x, y);
+
     const g = this.add.graphics();
-    g.fillStyle(0x000000, 0.4);
-    g.fillRoundedRect(cx - w / 2, y - h / 2, w, h, 24);
-    g.lineStyle(3, desbloqueada ? stage.corTema : 0x555555, 1);
-    g.strokeRoundedRect(cx - w / 2, y - h / 2, w, h, 24);
+    g.fillStyle(0x000000, desbloqueada ? 0.5 : 0.35);
+    g.fillRoundedRect(-w / 2, -h / 2, w, h, 20);
+    g.lineStyle(3, desbloqueada ? fase.corTema : 0x555555, 1);
+    g.strokeRoundedRect(-w / 2, -h / 2, w, h, 20);
+    cont.add(g);
 
-    this.add
-      .text(cx - w / 2 + 30, y - 50, `${stage.boss.emoji}`, { fontSize: "70px" })
-      .setOrigin(0, 0.5);
+    // número da fase
+    const num = this.add
+      .text(0, -54, `${fase.id}`, {
+        fontFamily: UI.FONT,
+        fontSize: "46px",
+        fontStyle: "bold",
+        color: desbloqueada ? "#ffffff" : "#777777",
+      })
+      .setOrigin(0.5);
+    cont.add(num);
 
-    this.add.text(cx - w / 2 + 130, y - 55, `Fase ${stage.id}: ${stage.nome}`, {
-      fontFamily: UI.FONT,
-      fontSize: "34px",
-      fontStyle: "bold",
-      color: desbloqueada ? "#ffffff" : "#888888",
-    });
+    // emoji do chefão
+    const emo = this.add
+      .text(0, 6, fase.boss.emoji, { fontSize: "52px" })
+      .setOrigin(0.5)
+      .setAlpha(desbloqueada ? 1 : 0.35);
+    cont.add(emo);
 
-    this.add.text(cx - w / 2 + 130, y - 8, stage.descricao, {
-      fontFamily: UI.FONT,
-      fontSize: "24px",
-      color: desbloqueada ? "#cccccc" : "#666666",
-      wordWrap: { width: w - 160 },
-    });
+    // foco (tabuada)
+    const foco = this.add
+      .text(0, 58, this.rotuloFoco(fase), {
+        fontFamily: UI.FONT,
+        fontSize: "26px",
+        fontStyle: "bold",
+        color: desbloqueada ? "#2ff7e6" : "#666666",
+      })
+      .setOrigin(0.5);
+    cont.add(foco);
 
     if (desbloqueada) {
-      const b = UI.botao(this, cx + w / 2 - 90, y + 50, "Jogar ▶", {
-        cor: stage.corTema,
-        w: 200,
-        h: 70,
-        tamFonte: 30,
-        onClick: () =>
-          this.scene.start("GameScene", {
-            stageId: stage.id,
-            dificuldade: this.dificuldade,
-          }),
+      cont.setSize(w, h);
+      cont.setInteractive(
+        new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
+        Phaser.Geom.Rectangle.Contains
+      );
+      cont.on("pointerover", () => cont.setScale(1.05));
+      cont.on("pointerout", () => cont.setScale(1));
+      cont.on("pointerdown", () => {
+        cont.setScale(0.96);
+        AudioFX.unlock();
+        this.scene.start("GameScene", { faseId: fase.id });
       });
-      b.setDepth(2);
+      cont.on("pointerup", () => cont.setScale(1.05));
     } else {
-      this.add
-        .text(cx + w / 2 - 90, y + 50, "🔒", { fontSize: "44px" })
+      const lock = this.add
+        .text(0, 6, "🔒", { fontSize: "54px" })
         .setOrigin(0.5);
+      cont.add(lock);
+      emo.setAlpha(0.12);
     }
   }
 }

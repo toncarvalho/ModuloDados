@@ -1,10 +1,9 @@
 /**
- * MenuScene — título estilizado kpop/metal, escolha de dificuldade e "Jogar".
+ * MenuScene — título estilizado kpop/metal e botões de jogar/continuar.
  */
 class MenuScene extends Phaser.Scene {
   constructor() {
     super("MenuScene");
-    this.dificuldade = "facil";
   }
 
   create() {
@@ -15,10 +14,10 @@ class MenuScene extends Phaser.Scene {
     this.decorRaio(120, 220, -0.3);
     this.decorRaio(GAME_WIDTH - 120, 260, 0.3);
 
-    UI.titulo(this, cx, 230, "IDOL", 120, "#ff3ea5");
-    UI.titulo(this, cx, 350, "MATH", 120, "#2ff7e6");
+    UI.titulo(this, cx, 250, "IDOL", 120, "#ff3ea5");
+    UI.titulo(this, cx, 370, "MATH", 120, "#2ff7e6");
     this.add
-      .text(cx, 450, "⚡ Tabuada Kpop • toque de Metal 🤘", {
+      .text(cx, 470, "⚡ Tabuada Kpop • toque de Metal 🤘", {
         fontFamily: UI.FONT,
         fontSize: "30px",
         color: "#ffd23e",
@@ -33,62 +32,54 @@ class MenuScene extends Phaser.Scene {
       this.estrelas.push(s);
     }
 
-    // Seleção de dificuldade
-    this.add
-      .text(cx, 580, "Escolha a dificuldade", {
-        fontFamily: UI.FONT,
-        fontSize: "34px",
-        color: "#ffffff",
-        fontStyle: "bold",
-      })
-      .setOrigin(0.5);
+    const faseMax = Storage.faseMax();
 
-    this.botoesDif = {};
-    const difs = ["facil", "medio", "dificil"];
-    difs.forEach((id, i) => {
-      const d = DIFICULDADES[id];
-      const b = UI.botao(this, cx, 680 + i * 130, `${d.emoji}  ${d.nome}`, {
-        cor: d.cor,
-        w: 460,
-        h: 110,
-        onClick: () => this.selecionarDif(id),
-      });
-      this.botoesDif[id] = b;
-    });
-    this.selecionarDif("facil");
-
-    // Botão Jogar
-    UI.botao(this, cx, 1110, "▶  JOGAR", {
+    // Botão Jogar — vai para a seleção de fases
+    UI.botao(this, cx, 760, "▶  JOGAR", {
       cor: 0x7b2ff7,
       w: 520,
       h: 130,
       tamFonte: 52,
       onClick: () => {
         AudioFX.unlock();
-        this.scene.start("StageScene", { dificuldade: this.dificuldade });
+        this.scene.start("StageScene");
       },
     });
 
-    // Melhor pontuação
+    // Continuar — pula direto para a maior fase desbloqueada (se já avançou)
+    if (faseMax > 1) {
+      UI.botao(this, cx, 920, `↪  Continuar (Fase ${faseMax})`, {
+        cor: 0x36d96b,
+        w: 520,
+        h: 110,
+        tamFonte: 38,
+        corTexto: "#0d0d12",
+        onClick: () => {
+          AudioFX.unlock();
+          this.scene.start("GameScene", { faseId: faseMax });
+        },
+      });
+    }
+
+    // Total de fases + melhor pontuação
+    this.add
+      .text(cx, 1080, `🗺️ ${FASES.length} fases de tabuada`, {
+        fontFamily: UI.FONT,
+        fontSize: "30px",
+        color: "#ffffff",
+        fontStyle: "bold",
+      })
+      .setOrigin(0.5);
+
     const best = Storage.get().melhorPontuacao;
     this.add
-      .text(cx, 1220, `🏆 Recorde: ${best}`, {
+      .text(cx, 1150, `🏆 Recorde: ${best}`, {
         fontFamily: UI.FONT,
         fontSize: "30px",
         color: "#2ff7e6",
         fontStyle: "bold",
       })
       .setOrigin(0.5);
-  }
-
-  selecionarDif(id) {
-    this.dificuldade = id;
-    Object.keys(this.botoesDif).forEach((k) => {
-      const sel = k === id;
-      this.botoesDif[k].setScale(sel ? 1.08 : 0.92);
-      this.botoesDif[k].setAlpha(sel ? 1 : 0.6);
-      this.botoesDif[k].label.setColor(sel ? "#0d0d12" : "#ffffff");
-    });
   }
 
   decorRaio(x, y, drift) {

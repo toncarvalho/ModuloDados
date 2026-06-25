@@ -1,16 +1,15 @@
 /**
  * Storage — persistência simples via localStorage.
- * Guarda progresso (fase máxima desbloqueada por dificuldade),
- * melhor pontuação e preferência de áudio.
+ * Guarda progresso (fase máxima desbloqueada), melhor pontuação e mudo.
  */
 const Storage = (() => {
-  const KEY = "idolmath.save.v1";
+  const KEY = "idolmath.save.v2";
 
   const defaults = () => ({
     melhorPontuacao: 0,
     muted: false,
-    // fase máxima desbloqueada por dificuldade (1-based)
-    desbloqueado: { facil: 1, medio: 1, dificil: 1 },
+    // fase máxima desbloqueada (1-based) — única progressão
+    faseDesbloqueada: 1,
   });
 
   function load() {
@@ -43,15 +42,16 @@ const Storage = (() => {
         save(state);
       }
     },
-    desbloquearFase(dificuldade, faseId) {
-      const atual = state.desbloqueado[dificuldade] || 1;
-      if (faseId > atual) {
-        state.desbloqueado[dificuldade] = faseId;
+    /** Desbloqueia a fase `faseId` (se for maior que a atual). */
+    desbloquearFase(faseId) {
+      if (faseId > (state.faseDesbloqueada || 1)) {
+        state.faseDesbloqueada = faseId;
         save(state);
       }
     },
-    faseDesbloqueada(dificuldade) {
-      return state.desbloqueado[dificuldade] || 1;
+    /** Maior fase desbloqueada (1-based). */
+    faseMax() {
+      return state.faseDesbloqueada || 1;
     },
     setMuted(muted) {
       state.muted = !!muted;
