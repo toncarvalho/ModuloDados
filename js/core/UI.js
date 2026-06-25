@@ -38,21 +38,32 @@ const UI = (() => {
       Phaser.Geom.Rectangle.Contains
     );
 
+    // handler mutável para permitir reuso do botão (trocar a ação sem recriar)
+    cont._onClick = opts.onClick || null;
+
     cont.on("pointerover", () => cont.setScale(1.04));
     cont.on("pointerout", () => cont.setScale(1));
+    // Dispara a AÇÃO já no toque (pointerdown) para resposta instantânea no celular.
     cont.on("pointerdown", () => {
       cont.setScale(0.96);
       AudioFX.unlock();
+      if (cont._onClick) cont._onClick();
     });
-    cont.on("pointerup", () => {
-      cont.setScale(1.04);
-      if (opts.onClick) opts.onClick();
-    });
+    // pointerup/upoutside apenas restauram a escala visual.
+    cont.on("pointerup", () => cont.setScale(1.04));
+    cont.on("pointerupoutside", () => cont.setScale(1));
 
     // permite trocar a cor depois (feedback acerto/erro)
     cont.setCor = (cor, alpha = 1) => {
       g.clear();
       desenharBotao(g, w, h, cor, alpha);
+    };
+    // reuso: trocar a ação e o rótulo sem destruir/recriar o objeto
+    cont.setHandler = (fn) => {
+      cont._onClick = fn;
+    };
+    cont.setLabel = (str) => {
+      txt.setText(str);
     };
     cont.label = txt;
     return cont;

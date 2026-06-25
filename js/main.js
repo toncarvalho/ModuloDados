@@ -26,6 +26,15 @@ const config = {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,
   },
+  // Flags de performance (fluidez e resposta de toque, especialmente em celulares).
+  render: {
+    antialias: true,
+    roundPixels: true,
+    powerPreference: "high-performance",
+  },
+  fps: { target: 60, min: 30 },
+  input: { activePointers: 1 },
+  disableContextMenu: true,
   scene: [BootScene, MenuScene, StageScene, GameScene, ResultScene],
 };
 

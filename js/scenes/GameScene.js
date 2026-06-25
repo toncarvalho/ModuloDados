@@ -142,6 +142,9 @@ class GameScene extends Phaser.Scene {
     // barra de tempo
     this.timerBarBg = this.add.graphics();
     this.timerBar = this.add.graphics();
+
+    // botões de resposta criados uma única vez (reaproveitados a cada pergunta)
+    this.criarBotoesResposta();
   }
 
   desenharHpBar() {
@@ -236,39 +239,52 @@ class GameScene extends Phaser.Scene {
     this.opcoes = MathEngine.gerarOpcoes(this.q.resposta);
     this.txtPergunta.setText(`${this.q.texto} = ?`);
 
-    this.criarBotoesResposta();
+    this.atualizarBotoesResposta();
     this.iniciarTimer();
   }
 
+  // Cria os 4 botões UMA vez (posições fixas 2×2). Performance: evita
+  // destruir/recriar objetos Text+Graphics a cada pergunta (causa de micro-travadas).
   criarBotoesResposta() {
-    this.limparBotoes();
     const cx = GAME_WIDTH / 2;
     const baseY = 880;
     const dx = 240;
     const dy = 160;
-    const cores = [0xff3ea5, 0x7b2ff7, 0x2ff7e6, 0xffd23e];
+    this.coresBotoes = [0xff3ea5, 0x7b2ff7, 0x2ff7e6, 0xffd23e];
 
-    this.opcoes.forEach((valor, i) => {
+    for (let i = 0; i < 4; i++) {
       const col = i % 2;
       const row = Math.floor(i / 2);
       const x = cx + (col === 0 ? -dx / 2 : dx / 2);
       const y = baseY + row * dy;
-      const corTexto = cores[i] === 0xffd23e ? "#0d0d12" : "#ffffff";
-      const b = UI.botao(this, x, y, `${valor}`, {
-        cor: cores[i],
+      const corTexto = this.coresBotoes[i] === 0xffd23e ? "#0d0d12" : "#ffffff";
+      const b = UI.botao(this, x, y, "", {
+        cor: this.coresBotoes[i],
         w: 220,
         h: 130,
         tamFonte: 56,
         corTexto,
-        onClick: () => this.responder(valor, b),
       });
+      b.setVisible(false).disableInteractive();
       this.botoesResposta.push(b);
+    }
+  }
+
+  // Reaproveita os botões existentes: atualiza rótulo, cor-base e ação.
+  atualizarBotoesResposta() {
+    this.opcoes.forEach((valor, i) => {
+      const b = this.botoesResposta[i];
+      b.setLabel(`${valor}`);
+      b.setCor(this.coresBotoes[i]);
+      b.setScale(1);
+      b.setHandler(() => this.responder(valor, b));
+      b.setVisible(true).setInteractive();
     });
   }
 
+  // Oculta/desabilita os botões sem destruí-los (banner do chefão, fim de jogo).
   limparBotoes() {
-    this.botoesResposta.forEach((b) => b.destroy());
-    this.botoesResposta = [];
+    this.botoesResposta.forEach((b) => b.setVisible(false).disableInteractive());
   }
 
   // ---------- Timer ----------
@@ -360,7 +376,7 @@ class GameScene extends Phaser.Scene {
     this.flutuarTexto(`+${base * this.combo}`, "#ffd23e");
     this.atualizarHUD();
 
-    this.time.delayedCall(380, () => {
+    this.time.delayedCall(220, () => {
       this.respondendo = false;
       if (this.isBoss) {
         this.bossHp -= 1;
@@ -392,7 +408,7 @@ class GameScene extends Phaser.Scene {
     this.flutuarTexto("-1 ❤️", "#ff5050");
     this.atualizarHUD();
 
-    this.time.delayedCall(700, () => {
+    this.time.delayedCall(450, () => {
       this.respondendo = false;
       if (this.vidas <= 0) {
         this.derrota();
