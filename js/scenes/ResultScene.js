@@ -29,13 +29,13 @@ class ResultScene extends Phaser.Scene {
       .text(cx, 330, venceu ? "🤘🎤✨" : "💔🎸", { fontSize: "90px" })
       .setOrigin(0.5);
 
-    const stage = getStage(d.stageId);
+    const fase = getFase(d.faseId);
     this.add
       .text(
         cx,
         450,
         venceu
-          ? `Você derrotou ${stage.boss.nome}!`
+          ? `Você derrotou ${fase.boss.nome}!`
           : "A plateia ficou no escuro...",
         {
           fontFamily: UI.FONT,
@@ -62,10 +62,7 @@ class ResultScene extends Phaser.Scene {
         w: 520,
         h: 120,
         onClick: () =>
-          this.scene.start("GameScene", {
-            stageId: d.stageId + 1,
-            dificuldade: d.dificuldade,
-          }),
+          this.scene.start("GameScene", { faseId: d.faseId + 1 }),
       });
       y += 150;
     } else {
@@ -73,11 +70,7 @@ class ResultScene extends Phaser.Scene {
         cor: 0x7b2ff7,
         w: 520,
         h: 120,
-        onClick: () =>
-          this.scene.start("GameScene", {
-            stageId: d.stageId,
-            dificuldade: d.dificuldade,
-          }),
+        onClick: () => this.scene.start("GameScene", { faseId: d.faseId }),
       });
       y += 150;
     }
@@ -86,8 +79,7 @@ class ResultScene extends Phaser.Scene {
       cor: 0xff3ea5,
       w: 520,
       h: 110,
-      onClick: () =>
-        this.scene.start("StageScene", { dificuldade: d.dificuldade }),
+      onClick: () => this.scene.start("StageScene"),
     });
     y += 140;
 
