@@ -14,9 +14,9 @@ resposta certa para atacar, encadeie **combos**, não perca suas **vidas** ❤�
 - 👥 **Perfis locais de jogador** (sem servidor): vários jogadores (irmãs, colegas) no mesmo
   aparelho escolhem "quem vai jogar" — cada perfil tem **nome + avatar** e **progresso/estrelas/
   recorde próprios**, tudo no `localStorage`. Não é login/senha — é um seletor de jogador.
-- 🦸 **3 heroínas** como avatar (Rubi, Lorena e Mel) — cosméticas (figura + cor + nome); a
-  heroína acompanha você pelas fases e pode ser trocada a qualquer momento. Figuras ilustradas
-  geradas com **DiceBear (estilo Avataaars)**.
+- 🦸 **4 personagens** como avatar — 3 heroínas (Rubi, Lorena e Mel) e 1 herói (Léo) —
+  cosméticos (figura + cor + nome); o personagem acompanha você pelas fases e pode ser trocado a
+  qualquer momento. Figuras ilustradas geradas com **DiceBear (estilo Avataaars)**.
 - 🗺️ **12 fases** em progressão por tabuada: 1–2 → 1–3 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10,
   e as **duas últimas misturam todas** (1–10). A dificuldade vem da tabuada da fase.
 - 🔓 Cada fase **desbloqueia a próxima** ao ser vencida (progresso salvo).
@@ -49,7 +49,7 @@ No celular, abra o mesmo endereço na mesma rede, ou hospede no **GitHub Pages**
 
 ## 🎮 Como jogar
 
-1. Na primeira vez, **crie seu jogador** (nome + heroína). Depois é só escolher seu perfil na
+1. Na primeira vez, **crie seu jogador** (nome + personagem). Depois é só escolher seu perfil na
    tela "Quem vai jogar?" — use **🔄 Trocar** no menu para alternar entre jogadores.
 2. No menu, toque em **JOGAR** (ou **Continuar** para ir à última fase desbloqueada).
 3. Selecione uma **fase** na grade (as próximas desbloqueiam ao vencer a anterior).
@@ -107,7 +107,7 @@ const JOGO = { faixaFator: { min: 1, max: 10 }, tempoResposta: 10, numInimigos: 
 ## 🙏 Créditos
 
 - **[Phaser 3](https://phaser.io/)** — motor do jogo (vendorizado em `vendor/`).
-- Figuras das heroínas (Rubi, Lorena e Mel) geradas com
+- Figuras dos personagens (Rubi, Lorena, Mel e Léo) geradas com
   **[DiceBear](https://www.dicebear.com/)**, estilo
   **[Avataaars](https://www.dicebear.com/styles/avataaars/)** (por Pablo Stanley) — uso livre,
   inclusive comercial. Geradas no momento do desenvolvimento e embutidas como SVG; o jogo não

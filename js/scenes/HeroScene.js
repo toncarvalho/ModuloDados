@@ -1,7 +1,7 @@
 /**
- * HeroScene — trocar o avatar (heroína) do jogador atual. Mostra as 3 heroínas
- * em cards; tocar atualiza o perfil ativo e volta ao menu. (A escolha inicial
- * acontece ao criar o perfil na ProfileScene.)
+ * HeroScene — trocar o avatar (personagem) do jogador atual. Mostra os
+ * personagens em cards; tocar atualiza o perfil ativo e volta ao menu.
+ * (A escolha inicial acontece ao criar o perfil na ProfileScene.)
  */
 class HeroScene extends Phaser.Scene {
   constructor() {
@@ -18,9 +18,9 @@ class HeroScene extends Phaser.Scene {
 
     const selecionado = Storage.getHeroiId();
 
-    // cards empilhados verticalmente (cabem confortável os 3)
-    const y0 = 470;
-    const dy = 230;
+    // cards empilhados verticalmente (compactos para caber os 4)
+    const y0 = 425;
+    const dy = 180;
     HEROIS.forEach((heroi, i) => {
       this.cardHeroi(cx, y0 + i * dy, heroi, heroi.id === selecionado);
     });
@@ -36,53 +36,53 @@ class HeroScene extends Phaser.Scene {
 
   cardHeroi(cx, y, heroi, atual) {
     const w = 600;
-    const h = 200;
+    const h = 156;
     const cont = this.add.container(cx, y);
 
     const corHex = "#" + heroi.cor.toString(16).padStart(6, "0");
 
     const g = this.add.graphics();
     g.fillStyle(0x000000, 0.5);
-    g.fillRoundedRect(-w / 2, -h / 2, w, h, 24);
+    g.fillRoundedRect(-w / 2, -h / 2, w, h, 22);
     g.lineStyle(atual ? 6 : 3, heroi.cor, 1);
-    g.strokeRoundedRect(-w / 2, -h / 2, w, h, 24);
+    g.strokeRoundedRect(-w / 2, -h / 2, w, h, 22);
     cont.add(g);
 
     // avatar (figura ilustrada, com fallback para emoji)
     let av;
     if (this.textures.exists(heroi.img)) {
-      av = this.add.image(-w / 2 + 95, 0, heroi.img).setDisplaySize(150, 150);
+      av = this.add.image(-w / 2 + 86, 0, heroi.img).setDisplaySize(116, 116);
     } else {
       av = this.add
-        .text(-w / 2 + 95, 0, heroi.emoji, { fontSize: "110px" })
+        .text(-w / 2 + 86, 0, heroi.emoji, { fontSize: "88px" })
         .setOrigin(0.5);
     }
     cont.add(av);
 
     // nome
-    const nome = this.add.text(-w / 2 + 200, -50, heroi.nome, {
+    const nome = this.add.text(-w / 2 + 178, -42, heroi.nome, {
       fontFamily: UI.FONT,
-      fontSize: "48px",
+      fontSize: "42px",
       fontStyle: "bold",
       color: corHex,
     });
     cont.add(nome);
 
     // descrição
-    const desc = this.add.text(-w / 2 + 200, 6, heroi.descricao, {
+    const desc = this.add.text(-w / 2 + 178, 12, heroi.descricao, {
       fontFamily: UI.FONT,
-      fontSize: "26px",
+      fontSize: "24px",
       color: "#dddddd",
-      wordWrap: { width: w / 2 + 60 },
+      wordWrap: { width: w / 2 + 80 },
     });
     cont.add(desc);
 
     // selo "atual"
     if (atual) {
       const selo = this.add
-        .text(w / 2 - 40, -h / 2 + 36, "✓", {
+        .text(w / 2 - 34, -h / 2 + 30, "✓", {
           fontFamily: UI.FONT,
-          fontSize: "48px",
+          fontSize: "44px",
           fontStyle: "bold",
           color: "#36d96b",
         })

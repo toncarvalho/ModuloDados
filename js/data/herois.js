@@ -32,6 +32,15 @@ const HEROIS = [
     cor: 0xffd23e,
     descricao: "Cheia de ritmo e energia",
   },
+  {
+    id: 4,
+    nome: "Léo",
+    img: "heroi4",
+    file: "leo",
+    emoji: "🎹",
+    cor: 0x2ff7e6,
+    descricao: "O estrategista esperto, de óculos",
+  },
 ];
 
 function getHeroi(id) {
