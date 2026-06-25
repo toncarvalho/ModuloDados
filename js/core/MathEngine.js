@@ -11,15 +11,46 @@ const MathEngine = (() => {
     return arr[inteiroAleatorio(0, arr.length - 1)];
   }
 
+  function chaveFato(a, b) {
+    return `${Math.min(a, b)}x${Math.max(a, b)}`;
+  }
+
   /**
    * Gera uma pergunta de multiplicação.
    * @param {number[]} tabuadas  fatores "tema" da fase (ex.: [2,5,7])
-   * @param {{min:number,max:number}} faixa  faixa do segundo fator pela dificuldade
+   * @param {{min:number,max:number}} faixa  faixa do segundo fator
+   * @param {Object} [fatos]  repetição inteligente: { "min x max": peso } — fatos
+   *   com peso maior (mais errados) aparecem com mais frequência.
    * @returns {{a:number,b:number,resposta:number,texto:string}}
    */
-  function gerarPergunta(tabuadas, faixa) {
-    const a = escolher(tabuadas);
-    const b = inteiroAleatorio(faixa.min, faixa.max);
+  function gerarPergunta(tabuadas, faixa, fatos) {
+    let a, b;
+    if (fatos && Object.keys(fatos).length) {
+      // seleção ponderada: enumera combinações e favorece fatos fracos
+      const combos = [];
+      let total = 0;
+      for (const t of tabuadas) {
+        for (let f = faixa.min; f <= faixa.max; f++) {
+          const peso = 1 + (fatos[chaveFato(t, f)] || 0) * 1.5;
+          combos.push({ a: t, b: f, peso });
+          total += peso;
+        }
+      }
+      let r = Math.random() * total;
+      let pick = combos[0];
+      for (const c of combos) {
+        r -= c.peso;
+        if (r <= 0) {
+          pick = c;
+          break;
+        }
+      }
+      a = pick.a;
+      b = pick.b;
+    } else {
+      a = escolher(tabuadas);
+      b = inteiroAleatorio(faixa.min, faixa.max);
+    }
     // alterna a ordem para a jogadora não decorar posição
     const inverter = Math.random() < 0.5;
     const x = inverter ? b : a;
@@ -72,5 +103,5 @@ const MathEngine = (() => {
     return a;
   }
 
-  return { gerarPergunta, gerarOpcoes, embaralhar, inteiroAleatorio };
+  return { gerarPergunta, gerarOpcoes, embaralhar, inteiroAleatorio, chaveFato };
 })();

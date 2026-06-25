@@ -13,13 +13,14 @@ class StageScene extends Phaser.Scene {
 
   create() {
     const cx = GAME_WIDTH / 2;
+    this.cameras.main.fadeIn(180, 13, 13, 18);
     this.add.image(cx, GAME_HEIGHT / 2, "bg");
 
-    UI.titulo(this, cx, 120, "FASES", 84, "#ff3ea5");
+    UI.titulo(this, cx, 110, "FASES", 80, "#ff3ea5");
     this.add
-      .text(cx, 200, "Cada fase treina uma tabuada", {
+      .text(cx, 184, `Cada fase treina uma tabuada   ·   ⭐ ${Storage.totalEstrelas()}`, {
         fontFamily: UI.FONT,
-        fontSize: "30px",
+        fontSize: "28px",
         color: "#ffd23e",
         fontStyle: "bold",
       })
@@ -43,12 +44,23 @@ class StageScene extends Phaser.Scene {
       this.tileFase(x, y, fase, desbloqueada);
     });
 
-    UI.botao(this, cx, 1210, "↩  Menu", {
+    if (Storage.bossRushDesbloqueado()) {
+      UI.botao(this, cx, 1110, "💀  BOSS RUSH", {
+        cor: 0xff3030,
+        w: 460,
+        h: 96,
+        tamFonte: 38,
+        onClick: () =>
+          Util.trocarCena(this, "GameScene", { bossRush: true, heroId: this.heroId }),
+      });
+    }
+
+    UI.botao(this, cx, 1218, "↩  Menu", {
       cor: 0x444455,
       w: 360,
-      h: 90,
-      tamFonte: 34,
-      onClick: () => this.scene.start("MenuScene"),
+      h: 86,
+      tamFonte: 32,
+      onClick: () => Util.trocarCena(this, "MenuScene"),
     });
   }
 
@@ -85,21 +97,34 @@ class StageScene extends Phaser.Scene {
 
     // emoji do chefão
     const emo = this.add
-      .text(0, 6, fase.boss.emoji, { fontSize: "52px" })
+      .text(0, -2, fase.boss.emoji, { fontSize: "48px" })
       .setOrigin(0.5)
       .setAlpha(desbloqueada ? 1 : 0.35);
     cont.add(emo);
 
     // foco (tabuada)
     const foco = this.add
-      .text(0, 58, this.rotuloFoco(fase), {
+      .text(0, 40, this.rotuloFoco(fase), {
         fontFamily: UI.FONT,
-        fontSize: "26px",
+        fontSize: "24px",
         fontStyle: "bold",
         color: desbloqueada ? "#2ff7e6" : "#666666",
       })
       .setOrigin(0.5);
     cont.add(foco);
+
+    // estrelas conquistadas
+    if (desbloqueada) {
+      const e = Storage.getEstrelas(fase.id);
+      const estr = this.add
+        .text(0, 70, "★".repeat(e) + "☆".repeat(3 - e), {
+          fontFamily: UI.FONT,
+          fontSize: "22px",
+          color: e ? "#ffd23e" : "#555566",
+        })
+        .setOrigin(0.5);
+      cont.add(estr);
+    }
 
     if (desbloqueada) {
       cont.setSize(w, h);
@@ -112,7 +137,7 @@ class StageScene extends Phaser.Scene {
       cont.on("pointerdown", () => {
         cont.setScale(0.96);
         AudioFX.unlock();
-        this.scene.start("GameScene", { faseId: fase.id, heroId: this.heroId });
+        Util.trocarCena(this, "GameScene", { faseId: fase.id, heroId: this.heroId });
       });
       cont.on("pointerup", () => cont.setScale(1.05));
     } else {
