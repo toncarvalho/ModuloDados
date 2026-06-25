@@ -34,7 +34,7 @@ class MenuScene extends Phaser.Scene {
 
     const faseMax = Storage.faseMax();
 
-    // Botão Jogar — vai para a seleção de fases
+    // Botão Jogar — vai para a escolha do herói
     UI.botao(this, cx, 760, "▶  JOGAR", {
       cor: 0x7b2ff7,
       w: 520,
@@ -42,7 +42,7 @@ class MenuScene extends Phaser.Scene {
       tamFonte: 52,
       onClick: () => {
         AudioFX.unlock();
-        this.scene.start("StageScene");
+        this.scene.start("HeroScene");
       },
     });
 
@@ -56,7 +56,10 @@ class MenuScene extends Phaser.Scene {
         corTexto: "#0d0d12",
         onClick: () => {
           AudioFX.unlock();
-          this.scene.start("GameScene", { faseId: faseMax });
+          this.scene.start("GameScene", {
+            faseId: faseMax,
+            heroId: Storage.getHeroiId(),
+          });
         },
       });
     }
