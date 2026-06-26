@@ -209,6 +209,37 @@ function ok(cond, msg) {
   ok(!!S.conquistasDesbloqueadas().estreia, "fica registrada como desbloqueada");
 }
 
+// 12) Desafio diário + ofensiva (datas injetadas)
+{
+  const ls = makeLS();
+  const S = loadStorage(ls);
+  S.criarPerfil("Ana", 1);
+  ok(S.ofensivaAtual("2026-01-10") === 0, "ofensiva inicial = 0");
+
+  const r1 = S.registrarDesafioDiario("2026-01-10");
+  ok(r1.ja === false && r1.ofensiva === 1, "1º dia: ofensiva 1");
+  ok(r1.recompensa === 35, "1º dia: recompensa 30+5");
+  ok(S.getMoedas() === 35, "moedas creditadas no 1º dia");
+  ok(S.desafioFeitoHoje("2026-01-10") === true, "feito hoje");
+
+  const r1b = S.registrarDesafioDiario("2026-01-10");
+  ok(r1b.ja === true && r1b.recompensa === 0, "mesmo dia: não recompensa");
+  ok(S.getMoedas() === 35, "saldo intacto ao repetir no mesmo dia");
+
+  const r2 = S.registrarDesafioDiario("2026-01-11");
+  ok(r2.ofensiva === 2, "dia seguinte: ofensiva 2");
+  ok(r2.recompensa === 40, "dia 2: recompensa 30+10");
+
+  // pula um dia (13, sem o 12) → reseta para 1
+  const r3 = S.registrarDesafioDiario("2026-01-13");
+  ok(r3.ofensiva === 1, "pular dia reinicia a ofensiva");
+  ok(S.melhorOfensiva() === 2, "melhor ofensiva preservada (2)");
+
+  // ofensiva 'viva' ontem ainda conta hoje; quebrada se mais antiga
+  ok(S.ofensivaAtual("2026-01-14") === 1, "ofensiva viva no dia seguinte");
+  ok(S.ofensivaAtual("2026-01-20") === 0, "ofensiva quebrada após dias parados");
+}
+
 if (falhas === 0) console.log("✅ Storage: todos os testes passaram.");
 else {
   console.error(`❌ Storage: ${falhas} falha(s).`);

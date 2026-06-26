@@ -10,12 +10,24 @@ class GameScene extends Phaser.Scene {
 
   init(data) {
     this.bossRush = !!(data && data.bossRush);
+    this.diario = !!(data && data.diario);
     this.heroi = getHeroi((data && data.heroId) || Storage.getHeroiId());
 
     if (this.bossRush) {
       this.brIdx = 0;
       this.fase = FASES[0];
       this.vidas = 5;
+    } else if (this.diario) {
+      // fase sintética: mix de todas as tabuadas, sem chefão
+      this.fase = {
+        id: 0,
+        nome: "Desafio do Dia",
+        tabuadas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        corTema: 0xffd23e,
+        inimigoEmoji: "🌟",
+        boss: { nome: "", emoji: "🌟", frase: "" },
+      };
+      this.vidas = 3;
     } else {
       this.fase = getFase((data && data.faseId) || 1);
       this.vidas = 3;
@@ -25,7 +37,7 @@ class GameScene extends Phaser.Scene {
     this.pontuacao = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.inimigosRestantes = JOGO.numInimigos;
+    this.inimigosRestantes = this.diario ? 10 : JOGO.numInimigos;
     this.isBoss = false;
     this.bossHp = 0;
     this.bossHpMax = 0;
@@ -205,6 +217,7 @@ class GameScene extends Phaser.Scene {
 
   tituloFase() {
     if (this.bossRush) return `Boss Rush — ${this.brIdx + 1}/${FASES.length}`;
+    if (this.diario) return "🗓️ Desafio do Dia";
     return `Fase ${this.fase.id}: ${this.fase.nome}`;
   }
 
@@ -229,7 +242,8 @@ class GameScene extends Phaser.Scene {
   proximoInimigo(primeiro) {
     if (this.acabou) return;
     if (this.inimigosRestantes <= 0 && !this.isBoss) {
-      this.iniciarChefao();
+      if (this.diario) this.vitoria();
+      else this.iniciarChefao();
       return;
     }
     if (!this.isBoss) {
@@ -571,6 +585,40 @@ class GameScene extends Phaser.Scene {
 
     this.pontuacao += this.vidas * 50 + this.maxCombo * 5;
     Storage.setMelhorPontuacao(this.pontuacao);
+
+    // ---- Desafio do Dia: registra ofensiva + bônus, sem estrelas/fases ----
+    if (this.diario) {
+      const res = Storage.registrarDesafioDiario();
+      const moedas = this.moedasPartida + res.recompensa;
+      Storage.addMoedas(this.moedasPartida); // res.recompensa já foi creditada no Storage
+      Storage.registrarFimDePartida({
+        maxCombo: this.maxCombo,
+        semErro: this.erros === 0,
+        venceu: true,
+      });
+      const novasConquistas = Storage.avaliarConquistas({ venceu: true });
+      this.time.delayedCall(700, () =>
+        this.scene.start("ResultScene", {
+          venceu: true,
+          diario: true,
+          jaFeito: res.ja,
+          ofensiva: res.ofensiva,
+          melhorOfensiva: res.melhorOfensiva,
+          pontuacao: this.pontuacao,
+          maxCombo: this.maxCombo,
+          faseId: 1,
+          heroId: this.heroi.id,
+          estrelas: 0,
+          acertos: this.acertos,
+          erros: this.erros,
+          errosFatos: this.errosFatos,
+          temProxima: false,
+          moedasGanhas: moedas,
+          novasConquistas,
+        })
+      );
+      return;
+    }
 
     const estrelas = this.calcularEstrelas();
     let temProxima = false;

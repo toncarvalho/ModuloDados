@@ -96,20 +96,32 @@ class MenuScene extends Phaser.Scene {
     });
     y += 124;
 
-    // Conquistas + Loja
-    UI.botao(this, cx - 135, y, "🏅 Conquistas", {
+    // Desafio do dia + Conquistas + Loja
+    const feito = Storage.desafioFeitoHoje();
+    UI.botao(this, cx - 240, y, feito ? "🗓️ Desafio ✓" : "🗓️ Desafio", {
+      cor: feito ? 0x2a2a3a : 0xff7a1a,
+      corTexto: feito ? "#36d96b" : "#ffffff",
+      w: 224,
+      h: 96,
+      tamFonte: 27,
+      onClick: () => {
+        AudioFX.unlock();
+        Util.trocarCena(this, "GameScene", { diario: true, heroId: Storage.getHeroiId() });
+      },
+    });
+    UI.botao(this, cx, y, "🏅 Conquistas", {
       cor: 0xffd23e,
       corTexto: "#0d0d12",
-      w: 250,
+      w: 224,
       h: 96,
-      tamFonte: 28,
+      tamFonte: 25,
       onClick: () => Util.trocarCena(this, "ConquistasScene"),
     });
-    UI.botao(this, cx + 135, y, "🛍️ Loja", {
+    UI.botao(this, cx + 240, y, "🛍️ Loja", {
       cor: 0xff3ea5,
-      w: 250,
+      w: 224,
       h: 96,
-      tamFonte: 30,
+      tamFonte: 28,
       onClick: () => Util.trocarCena(this, "LojaScene"),
     });
     y += 128;
@@ -166,9 +178,11 @@ class MenuScene extends Phaser.Scene {
         color: "#ffffff",
       })
       .setOrigin(0, 0.5);
-    // saldo de moedas
+    // saldo de moedas + ofensiva do desafio diário
+    const ofensiva = Storage.ofensivaAtual();
+    const saldoTxt = `🪙 ${Storage.getMoedas()}` + (ofensiva > 0 ? `   🔥 ${ofensiva}` : "");
     this.add
-      .text(102, 78, `🪙 ${Storage.getMoedas()}`, {
+      .text(102, 78, saldoTxt, {
         fontFamily: UI.FONT,
         fontSize: "26px",
         fontStyle: "bold",

@@ -31,6 +31,7 @@ const Storage = (() => {
     moedas: 0, // economia (loja de roupas)
     conquistas: {}, // { id: true } desbloqueadas
     cosmeticos: { possui: [], roupa: {} }, // possui: [roupaId]; roupa: { heroId: roupaId }
+    desafio: { ultimoDia: null, ofensiva: 0, melhorOfensiva: 0 }, // desafio diário
   });
 
   const defaultsConfig = () => ({
@@ -64,6 +65,20 @@ const Storage = (() => {
 
   function chaveFato(a, b) {
     return `${Math.min(a, b)}x${Math.max(a, b)}`;
+  }
+
+  // ---- datas (desafio diário) ----
+  function pad2(n) {
+    return String(n).padStart(2, "0");
+  }
+  function hojeISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+  }
+  function diffDias(aISO, bISO) {
+    return Math.round(
+      (Date.parse(bISO + "T00:00:00") - Date.parse(aISO + "T00:00:00")) / 86400000
+    );
   }
 
   function novoId() {
@@ -430,6 +445,43 @@ const Storage = (() => {
         state.estat.semErroVitorias = (state.estat.semErroVitorias || 0) + 1;
       }
       salvarSave();
+    },
+
+    // ===================== DESAFIO DIÁRIO (ofensiva/streak) =====================
+    desafioFeitoHoje(hoje) {
+      const h = hoje || hojeISO();
+      return !!(state.desafio && state.desafio.ultimoDia === h);
+    },
+    /** Ofensiva atual (0 se nunca jogou ou a sequência quebrou). */
+    ofensivaAtual(hoje) {
+      const d = state.desafio;
+      if (!d || !d.ultimoDia) return 0;
+      const diff = diffDias(d.ultimoDia, hoje || hojeISO());
+      return diff === 0 || diff === 1 ? d.ofensiva || 0 : 0;
+    },
+    melhorOfensiva() {
+      return (state.desafio && state.desafio.melhorOfensiva) || 0;
+    },
+    /**
+     * Registra a conclusão do desafio do dia. Se já feito hoje, não recompensa.
+     * Senão estende a ofensiva (ou reinicia se pulou dia), credita moedas-bônus
+     * (30 + min(ofensiva,7)*5) e retorna o resultado.
+     */
+    registrarDesafioDiario(hoje) {
+      const h = hoje || hojeISO();
+      if (!state.desafio) state.desafio = { ultimoDia: null, ofensiva: 0, melhorOfensiva: 0 };
+      const d = state.desafio;
+      if (d.ultimoDia === h) {
+        return { ja: true, ofensiva: d.ofensiva, melhorOfensiva: d.melhorOfensiva, recompensa: 0 };
+      }
+      const diff = d.ultimoDia ? diffDias(d.ultimoDia, h) : null;
+      d.ofensiva = diff === 1 ? (d.ofensiva || 0) + 1 : 1;
+      d.ultimoDia = h;
+      if (d.ofensiva > (d.melhorOfensiva || 0)) d.melhorOfensiva = d.ofensiva;
+      const recompensa = 30 + Math.min(d.ofensiva, 7) * 5;
+      state.moedas = (state.moedas || 0) + recompensa;
+      salvarSave();
+      return { ja: false, ofensiva: d.ofensiva, melhorOfensiva: d.melhorOfensiva, recompensa };
     },
 
     // ===================== CONFIGURAÇÕES (globais do aparelho) =====================

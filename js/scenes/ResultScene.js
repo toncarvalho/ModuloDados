@@ -16,6 +16,12 @@ class ResultScene extends Phaser.Scene {
     const d = this.data;
     this.cameras.main.fadeIn(180, 13, 13, 18);
     this.add.image(cx, GAME_HEIGHT / 2, "bg");
+
+    if (d.diario) {
+      this.telaDesafio(cx, d);
+      return;
+    }
+
     const venceu = d.venceu;
 
     UI.titulo(
@@ -112,6 +118,79 @@ class ResultScene extends Phaser.Scene {
     );
     y += 130;
     this.botao(cx, y, "🏠  Menu", 0x444455, () => Util.trocarCena(this, "MenuScene"));
+  }
+
+  /** Tela de fim do Desafio do Dia (foco na ofensiva/streak). */
+  telaDesafio(cx, d) {
+    UI.titulo(this, cx, 130, "DESAFIO!", 84, "#ffd23e");
+
+    // ofensiva grande
+    this.add.text(cx, 270, "🔥", { fontSize: "96px" }).setOrigin(0.5);
+    this.add
+      .text(cx, 392, d.ofensiva === 1 ? "1 dia seguido" : `${d.ofensiva} dias seguidos`, {
+        fontFamily: UI.FONT,
+        fontSize: "44px",
+        fontStyle: "bold",
+        color: "#ff8a3d",
+      })
+      .setOrigin(0.5);
+    this.add
+      .text(cx, 446, `Melhor ofensiva: ${d.melhorOfensiva}`, {
+        fontFamily: UI.FONT,
+        fontSize: "26px",
+        color: "#cccccc",
+      })
+      .setOrigin(0.5);
+
+    const total = d.acertos + d.erros;
+    const precisao = total ? Math.round((d.acertos / total) * 100) : 100;
+    this.painel(cx, 560, [
+      [`Pontuação`, `${d.pontuacao}`],
+      [`Precisão`, `${precisao}%  (${d.acertos}/${total})`],
+      [`Combo máximo`, `x${d.maxCombo}`],
+    ]);
+
+    if (d.moedasGanhas) {
+      this.add
+        .text(cx, 742, `🪙 +${d.moedasGanhas} moedas`, {
+          fontFamily: UI.FONT,
+          fontSize: "34px",
+          fontStyle: "bold",
+          color: "#ffd23e",
+        })
+        .setOrigin(0.5);
+    }
+    const aviso = d.jaFeito
+      ? "Você já fez o desafio de hoje — volte amanhã pra manter a ofensiva! 😉"
+      : "Volte amanhã pra aumentar a ofensiva! 🔥";
+    this.add
+      .text(cx, 792, aviso, {
+        fontFamily: UI.FONT,
+        fontSize: "24px",
+        color: "#9ad8ff",
+        align: "center",
+        wordWrap: { width: 640 },
+      })
+      .setOrigin(0.5);
+
+    if (d.novasConquistas && d.novasConquistas.length) {
+      const txt = d.novasConquistas.map((c) => `${c.icone} ${c.nome}`).join("   ");
+      this.add
+        .text(cx, 858, `🏅 Nova conquista!  ${txt}`, {
+          fontFamily: UI.FONT,
+          fontSize: "26px",
+          fontStyle: "bold",
+          color: "#36d96b",
+          align: "center",
+          wordWrap: { width: 660 },
+        })
+        .setOrigin(0.5);
+    }
+
+    this.botao(cx, 960, "↻  Jogar de novo", 0x7b2ff7, () =>
+      Util.trocarCena(this, "GameScene", { diario: true, heroId: d.heroId })
+    );
+    this.botao(cx, 1090, "🏠  Menu", 0x444455, () => Util.trocarCena(this, "MenuScene"));
   }
 
   botao(cx, y, label, cor, onClick) {
