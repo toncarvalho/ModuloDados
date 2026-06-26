@@ -31,6 +31,8 @@ resposta certa para atacar, encadeie **combos**, não perca suas **vidas** ❤�
   o conceito de multiplicação, não só a memória.
 - 📚 **Modo Treino**: pratique uma tabuada (ou Mix) sem tempo e sem perder vida.
 - 💀 **Boss Rush**: enfrente os 12 chefões em sequência (desbloqueia ao zerar a última fase).
+- 🗓️ **Desafio do Dia + ofensiva**: um desafio rápido (mix de tabuadas) por dia; jogar dias
+  seguidos acumula uma **ofensiva (🔥 streak)** e rende moedas-bônus crescentes.
 - 🏅 **Conquistas**: medalhas por marcos (combo x10, show perfeito, mestre do 7, imperatriz…),
   cada uma rende **moedas**.
 - 🪙 **Moedas & 🛍️ Loja**: ganhe moedas jogando e desbloqueie **roupas** para os personagens
