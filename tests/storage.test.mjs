@@ -11,6 +11,10 @@ import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const code = readFileSync(join(__dirname, "../js/core/Storage.js"), "utf8");
+// dados globais usados pelo Storage (roupas/conquistas)
+const codeRoupas = readFileSync(join(__dirname, "../js/data/roupas.js"), "utf8");
+const codeConq = readFileSync(join(__dirname, "../js/data/conquistas.js"), "utf8");
+const codeHerois = readFileSync(join(__dirname, "../js/data/herois.js"), "utf8");
 
 function makeLS(initial = {}) {
   const m = new Map(Object.entries(initial));
@@ -23,7 +27,9 @@ function makeLS(initial = {}) {
   };
 }
 function loadStorage(ls) {
-  return new Function("localStorage", code + "\nreturn Storage;")(ls);
+  // herois/roupas/conquistas definem globais usados pelo Storage
+  const bundle = codeHerois + "\n" + codeRoupas + "\n" + codeConq + "\n" + code + "\nreturn Storage;";
+  return new Function("localStorage", bundle)(ls);
 }
 
 let falhas = 0;
@@ -147,6 +153,60 @@ function ok(cond, msg) {
   ok(S.bossRushDesbloqueado() === true, "migração: bossRush herdado");
   ok(S.getConfig().musica === false && S.getConfig().voz === true, "migração: config p/ global");
   ok(!ls.has("idolmath.save.v2"), "migração: save antigo removido");
+}
+
+// 9) Moedas
+{
+  const ls = makeLS();
+  const S = loadStorage(ls);
+  S.criarPerfil("Ana", 1);
+  ok(S.getMoedas() === 0, "moedas começam em 0");
+  S.addMoedas(50);
+  ok(S.getMoedas() === 50, "addMoedas soma");
+  ok(S.gastarMoedas(30) === true && S.getMoedas() === 20, "gastarMoedas debita");
+  ok(S.gastarMoedas(999) === false, "gastarMoedas falha sem saldo");
+  ok(S.getMoedas() === 20, "saldo intacto após falha");
+}
+
+// 10) Roupas: equipar base, comprar e equipar
+{
+  const ls = makeLS();
+  const S = loadStorage(ls);
+  S.criarPerfil("Bia", 1); // herói 1 (Rubi)
+  ok(S.roupaEquipada(1) === "heroi1", "roupa padrão = base do herói");
+  ok(S.possuiRoupa("heroi1") === true, "base sempre possuída");
+  ok(S.possuiRoupa("rubi-festa") === false, "roupa paga não possuída no início");
+  ok(S.comprarRoupa(1, "rubi-festa", 60) === false, "compra falha sem moedas");
+  S.addMoedas(100);
+  ok(S.comprarRoupa(1, "rubi-festa", 60) === true, "compra ok com saldo");
+  ok(S.getMoedas() === 40, "moedas debitadas na compra");
+  ok(S.possuiRoupa("rubi-festa") === true, "passa a possuir a roupa");
+  ok(S.roupaEquipada(1) === "rubi-festa", "compra já equipa");
+  S.equiparRoupa(1, "heroi1");
+  ok(S.roupaEquipada(1) === "heroi1", "pode reequipar a base");
+  // comprar de novo (já possui) só equipa, sem cobrar
+  ok(S.comprarRoupa(1, "rubi-festa", 60) === true && S.getMoedas() === 40, "reequipar não cobra");
+}
+
+// 11) Conquistas: avaliar desbloqueia + credita uma vez
+{
+  const ls = makeLS();
+  const S = loadStorage(ls);
+  S.criarPerfil("Cris", 1);
+  // condições: faseMax>=2 (estreia,+20) e maxCombo>=10 (combo10,+30)
+  S.desbloquearFase(2);
+  S.registrarFimDePartida({ maxCombo: 12, semErro: true, venceu: true });
+  const novas = S.avaliarConquistas({ venceu: true });
+  const ids = novas.map((c) => c.id);
+  ok(ids.includes("estreia"), "desbloqueia 'estreia'");
+  ok(ids.includes("combo10"), "desbloqueia 'combo10'");
+  ok(ids.includes("perfeito"), "desbloqueia 'perfeito' (vitória sem erro)");
+  ok(S.getMoedas() >= 20 + 30 + 40, "recompensas creditadas");
+  const moedasAntes = S.getMoedas();
+  const novas2 = S.avaliarConquistas({ venceu: true });
+  ok(novas2.length === 0, "não desbloqueia de novo");
+  ok(S.getMoedas() === moedasAntes, "não credita de novo");
+  ok(!!S.conquistasDesbloqueadas().estreia, "fica registrada como desbloqueada");
 }
 
 if (falhas === 0) console.log("✅ Storage: todos os testes passaram.");

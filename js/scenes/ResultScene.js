@@ -62,8 +62,33 @@ class ResultScene extends Phaser.Scene {
       [`Recorde`, `${Storage.get().melhorPontuacao}`],
     ]);
 
+    // moedas ganhas + conquistas novas
+    if (d.moedasGanhas) {
+      this.add
+        .text(cx, 698, `🪙 +${d.moedasGanhas} moedas`, {
+          fontFamily: UI.FONT,
+          fontSize: "34px",
+          fontStyle: "bold",
+          color: "#ffd23e",
+        })
+        .setOrigin(0.5);
+    }
+    if (d.novasConquistas && d.novasConquistas.length) {
+      const txt = d.novasConquistas.map((c) => `${c.icone} ${c.nome}`).join("   ");
+      this.add
+        .text(cx, 744, `🏅 Nova conquista!  ${txt}`, {
+          fontFamily: UI.FONT,
+          fontSize: "26px",
+          fontStyle: "bold",
+          color: "#36d96b",
+          align: "center",
+          wordWrap: { width: 660 },
+        })
+        .setOrigin(0.5);
+    }
+
     // fatos a treinar
-    this.fatosTreinar(cx, 760, d.errosFatos || []);
+    this.fatosTreinar(cx, 800, d.errosFatos || []);
 
     // botões
     let y = 920;

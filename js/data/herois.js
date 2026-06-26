@@ -55,3 +55,15 @@ const HEROIS = [
 function getHeroi(id) {
   return HEROIS.find((h) => h.id === id) || HEROIS[0];
 }
+
+/**
+ * Chave de textura do avatar de um herói para o jogador atual, levando em
+ * conta a roupa equipada (loja). Fallback para a figura base do herói.
+ */
+function texturaAvatar(heroId) {
+  if (typeof Storage !== "undefined" && Storage.roupaEquipada) {
+    const r = Storage.roupaEquipada(heroId);
+    if (r) return r;
+  }
+  return getHeroi(heroId).img;
+}

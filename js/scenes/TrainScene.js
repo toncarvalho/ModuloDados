@@ -207,6 +207,7 @@ class TrainScene extends Phaser.Scene {
     Storage.registrarResposta(this.q.a, this.q.b, certo);
     if (certo) {
       this.acertos += 1;
+      Storage.addMoedas(1);
       botao.setCor(0x36d96b);
       AudioFX.acerto();
       Util.vibrar(30);

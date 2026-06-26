@@ -2,7 +2,7 @@
  * Service Worker — cache do app shell para o jogo funcionar 100% offline
  * e carregar rápido. Estratégia cache-first com fallback de rede.
  */
-const CACHE = "idolmath-v5";
+const CACHE = "idolmath-v6";
 const ASSETS = [
   "./",
   "index.html",
@@ -17,6 +17,8 @@ const ASSETS = [
   "js/core/Util.js",
   "js/data/fases.js",
   "js/data/herois.js",
+  "js/data/roupas.js",
+  "js/data/conquistas.js",
   "js/scenes/BootScene.js",
   "js/scenes/ProfileScene.js",
   "js/scenes/MenuScene.js",
@@ -27,12 +29,24 @@ const ASSETS = [
   "js/scenes/SettingsScene.js",
   "js/scenes/TrainScene.js",
   "js/scenes/ProgressScene.js",
+  "js/scenes/LojaScene.js",
+  "js/scenes/ConquistasScene.js",
   "assets/icon.svg",
   "assets/herois/rubi.svg",
+  "assets/herois/rubi-festa.svg",
+  "assets/herois/rubi-inverno.svg",
   "assets/herois/lorena.svg",
+  "assets/herois/lorena-rock.svg",
+  "assets/herois/lorena-esporte.svg",
   "assets/herois/mel.svg",
+  "assets/herois/mel-diva.svg",
+  "assets/herois/mel-verao.svg",
   "assets/herois/leo.svg",
+  "assets/herois/leo-aventura.svg",
+  "assets/herois/leo-gamer.svg",
   "assets/herois/priya.svg",
+  "assets/herois/priya-festival.svg",
+  "assets/herois/priya-esporte.svg",
 ];
 
 self.addEventListener("install", (e) => {

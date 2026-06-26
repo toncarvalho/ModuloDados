@@ -46,6 +46,8 @@ const config = {
     SettingsScene,
     TrainScene,
     ProgressScene,
+    LojaScene,
+    ConquistasScene,
   ],
 };
 

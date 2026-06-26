@@ -48,10 +48,11 @@ class HeroScene extends Phaser.Scene {
     g.strokeRoundedRect(-w / 2, -h / 2, w, h, 20);
     cont.add(g);
 
-    // avatar (figura ilustrada, com fallback para emoji)
+    // avatar (figura ilustrada com a roupa equipada, fallback para emoji)
+    const texHeroi = texturaAvatar(heroi.id);
     let av;
-    if (this.textures.exists(heroi.img)) {
-      av = this.add.image(-w / 2 + 76, 0, heroi.img).setDisplaySize(98, 98);
+    if (this.textures.exists(texHeroi)) {
+      av = this.add.image(-w / 2 + 76, 0, texHeroi).setDisplaySize(98, 98);
     } else {
       av = this.add
         .text(-w / 2 + 76, 0, heroi.emoji, { fontSize: "74px" })

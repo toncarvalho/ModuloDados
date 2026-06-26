@@ -37,6 +37,7 @@ class GameScene extends Phaser.Scene {
     this.acertos = 0;
     this.erros = 0;
     this.errosFatos = []; // textos "7 × 8" errados nesta partida
+    this.moedasPartida = 0; // moedas ganhas (acertos + bônus)
   }
 
   create() {
@@ -96,9 +97,10 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(1, 0);
 
-    // badge do herói (figura + nome) no topo-esquerdo
-    if (this.textures.exists(this.heroi.img)) {
-      this.add.image(64, 124, this.heroi.img).setDisplaySize(64, 64);
+    // badge do herói (figura + nome) no topo-esquerdo (com a roupa equipada)
+    const texHeroi = texturaAvatar(this.heroi.id);
+    if (this.textures.exists(texHeroi)) {
+      this.add.image(64, 124, texHeroi).setDisplaySize(64, 64);
     } else {
       this.add.text(64, 96, this.heroi.emoji, { fontSize: "48px" }).setOrigin(0.5, 0);
     }
@@ -401,6 +403,7 @@ class GameScene extends Phaser.Scene {
   acertar(botao) {
     this.respondendo = true;
     this.acertos += 1;
+    this.moedasPartida += 2;
     if (botao) botao.setCor(0x36d96b);
     this.combo += 1;
     this.maxCombo = Math.max(this.maxCombo, this.combo);
@@ -581,6 +584,16 @@ class GameScene extends Phaser.Scene {
       else Storage.desbloquearBossRush(); // zerou a última → libera Boss Rush
     }
 
+    // moedas: acertos + bônus de vitória; conquistas
+    const moedas = this.moedasPartida + 20 + estrelas * 10;
+    Storage.addMoedas(moedas);
+    Storage.registrarFimDePartida({
+      maxCombo: this.maxCombo,
+      semErro: this.erros === 0,
+      venceu: true,
+    });
+    const novasConquistas = Storage.avaliarConquistas({ venceu: true, faseId: this.fase.id });
+
     this.time.delayedCall(700, () =>
       this.scene.start("ResultScene", {
         venceu: true,
@@ -594,6 +607,8 @@ class GameScene extends Phaser.Scene {
         erros: this.erros,
         errosFatos: this.errosFatos,
         temProxima,
+        moedasGanhas: moedas,
+        novasConquistas,
       })
     );
   }
@@ -605,6 +620,15 @@ class GameScene extends Phaser.Scene {
     this.limparBotoes();
     AudioFX.derrota();
     Storage.setMelhorPontuacao(this.pontuacao);
+
+    // mesmo perdendo, ganha as moedas dos acertos e conquistas cumulativas valem
+    Storage.addMoedas(this.moedasPartida);
+    Storage.registrarFimDePartida({
+      maxCombo: this.maxCombo,
+      semErro: false,
+      venceu: false,
+    });
+    const novasConquistas = Storage.avaliarConquistas({ venceu: false, faseId: this.fase.id });
 
     this.time.delayedCall(700, () =>
       this.scene.start("ResultScene", {
@@ -619,6 +643,8 @@ class GameScene extends Phaser.Scene {
         erros: this.erros,
         errosFatos: this.errosFatos,
         temProxima: false,
+        moedasGanhas: this.moedasPartida,
+        novasConquistas,
       })
     );
   }
