@@ -678,6 +678,16 @@ class GameScene extends Phaser.Scene {
     });
     const novasConquistas = Storage.avaliarConquistas({ venceu: false, faseId: this.fase.id });
 
+    // Desafio do Dia perdido: tela do desafio (não registra/quebra a ofensiva).
+    const extra = this.diario
+      ? {
+          diario: true,
+          ofensiva: Storage.ofensivaAtual(),
+          melhorOfensiva: Storage.melhorOfensiva(),
+          jaFeito: Storage.desafioFeitoHoje(),
+        }
+      : {};
+
     this.time.delayedCall(700, () =>
       this.scene.start("ResultScene", {
         venceu: false,
@@ -693,6 +703,7 @@ class GameScene extends Phaser.Scene {
         temProxima: false,
         moedasGanhas: this.moedasPartida,
         novasConquistas,
+        ...extra,
       })
     );
   }
