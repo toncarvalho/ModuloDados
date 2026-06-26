@@ -41,6 +41,15 @@ const HEROIS = [
     cor: 0x2ff7e6,
     descricao: "O estrategista esperto, de óculos",
   },
+  {
+    id: 5,
+    nome: "Priya",
+    img: "heroi5",
+    file: "priya",
+    emoji: "🎶",
+    cor: 0xff7a1a,
+    descricao: "Determinada e cheia de foco",
+  },
 ];
 
 function getHeroi(id) {

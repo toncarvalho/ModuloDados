@@ -18,9 +18,9 @@ class HeroScene extends Phaser.Scene {
 
     const selecionado = Storage.getHeroiId();
 
-    // cards empilhados verticalmente (compactos para caber os 4)
-    const y0 = 425;
-    const dy = 180;
+    // cards empilhados verticalmente (compactos para caber os 5)
+    const y0 = 405;
+    const dy = 156;
     HEROIS.forEach((heroi, i) => {
       this.cardHeroi(cx, y0 + i * dy, heroi, heroi.id === selecionado);
     });
@@ -36,53 +36,53 @@ class HeroScene extends Phaser.Scene {
 
   cardHeroi(cx, y, heroi, atual) {
     const w = 600;
-    const h = 156;
+    const h = 132;
     const cont = this.add.container(cx, y);
 
     const corHex = "#" + heroi.cor.toString(16).padStart(6, "0");
 
     const g = this.add.graphics();
     g.fillStyle(0x000000, 0.5);
-    g.fillRoundedRect(-w / 2, -h / 2, w, h, 22);
+    g.fillRoundedRect(-w / 2, -h / 2, w, h, 20);
     g.lineStyle(atual ? 6 : 3, heroi.cor, 1);
-    g.strokeRoundedRect(-w / 2, -h / 2, w, h, 22);
+    g.strokeRoundedRect(-w / 2, -h / 2, w, h, 20);
     cont.add(g);
 
     // avatar (figura ilustrada, com fallback para emoji)
     let av;
     if (this.textures.exists(heroi.img)) {
-      av = this.add.image(-w / 2 + 86, 0, heroi.img).setDisplaySize(116, 116);
+      av = this.add.image(-w / 2 + 76, 0, heroi.img).setDisplaySize(98, 98);
     } else {
       av = this.add
-        .text(-w / 2 + 86, 0, heroi.emoji, { fontSize: "88px" })
+        .text(-w / 2 + 76, 0, heroi.emoji, { fontSize: "74px" })
         .setOrigin(0.5);
     }
     cont.add(av);
 
     // nome
-    const nome = this.add.text(-w / 2 + 178, -42, heroi.nome, {
+    const nome = this.add.text(-w / 2 + 158, -38, heroi.nome, {
       fontFamily: UI.FONT,
-      fontSize: "42px",
+      fontSize: "38px",
       fontStyle: "bold",
       color: corHex,
     });
     cont.add(nome);
 
     // descrição
-    const desc = this.add.text(-w / 2 + 178, 12, heroi.descricao, {
+    const desc = this.add.text(-w / 2 + 158, 10, heroi.descricao, {
       fontFamily: UI.FONT,
-      fontSize: "24px",
+      fontSize: "22px",
       color: "#dddddd",
-      wordWrap: { width: w / 2 + 80 },
+      wordWrap: { width: w / 2 + 100 },
     });
     cont.add(desc);
 
     // selo "atual"
     if (atual) {
       const selo = this.add
-        .text(w / 2 - 34, -h / 2 + 30, "✓", {
+        .text(w / 2 - 32, -h / 2 + 26, "✓", {
           fontFamily: UI.FONT,
-          fontSize: "44px",
+          fontSize: "40px",
           fontStyle: "bold",
           color: "#36d96b",
         })
