@@ -27,6 +27,7 @@ const Storage = (() => {
     estrelas: {}, // { faseId: 0..3 } melhor estrela por fase
     fatos: {}, // { "min x max": peso }  peso alto = errou mais (repetir mais)
     bossRush: false, // desbloqueado ao zerar a última fase
+    estat: { acertos: 0, erros: 0, tempoMs: 0 }, // painel de progresso
   });
 
   const defaultsConfig = () => ({
@@ -262,17 +263,68 @@ const Storage = (() => {
       return Object.values(state.estrelas).reduce((s, n) => s + n, 0);
     },
 
-    // ===================== REPETIÇÃO INTELIGENTE (fatos fracos) =====================
+    // ===================== REPETIÇÃO INTELIGENTE (fatos fracos) + ESTATÍSTICAS =====================
     registrarResposta(a, b, acertou) {
       const k = chaveFato(a, b);
       let p = state.fatos[k] || 0;
       p = acertou ? Math.max(0, p * 0.5 - 0.2) : Math.min(8, p + 2);
       if (p <= 0.01) delete state.fatos[k];
       else state.fatos[k] = p;
+      if (!state.estat) state.estat = { acertos: 0, erros: 0, tempoMs: 0 };
+      if (acertou) state.estat.acertos += 1;
+      else state.estat.erros += 1;
       salvarSave();
     },
     getFatos() {
       return state.fatos;
+    },
+    /** Acumula tempo de jogo (ms) no perfil atual. */
+    adicionarTempo(ms) {
+      if (!ms || ms < 0) return;
+      if (!state.estat) state.estat = { acertos: 0, erros: 0, tempoMs: 0 };
+      state.estat.tempoMs += ms;
+      salvarSave();
+    },
+    /**
+     * Resumo para o painel de progresso (pais/professor): precisão, tempo,
+     * fraqueza por tabuada (1..10, a partir dos pesos de fatos) e fatos fracos.
+     */
+    estatisticas() {
+      const e = state.estat || { acertos: 0, erros: 0, tempoMs: 0 };
+      const acertos = e.acertos || 0;
+      const erros = e.erros || 0;
+      const total = acertos + erros;
+      const precisao = total ? Math.round((acertos / total) * 100) : null;
+
+      const fraqueza = {};
+      for (let t = 1; t <= 10; t++) fraqueza[t] = 0;
+      const lista = [];
+      for (const k in state.fatos) {
+        const peso = state.fatos[k];
+        const partes = k.split("x").map(Number);
+        const a = partes[0];
+        const b = partes[1];
+        if (a >= 1 && a <= 10) fraqueza[a] += peso;
+        if (b >= 1 && b <= 10 && b !== a) fraqueza[b] += peso;
+        lista.push({ a, b, peso });
+      }
+      let maxFraqueza = 0;
+      for (let t = 1; t <= 10; t++) maxFraqueza = Math.max(maxFraqueza, fraqueza[t]);
+      lista.sort((x, y) => y.peso - x.peso);
+      const fatosFracos = lista.slice(0, 6).map((f) => `${f.a}×${f.b}`);
+
+      return {
+        acertos,
+        erros,
+        total,
+        precisao,
+        tempoMs: e.tempoMs || 0,
+        fraquezaTabuadas: fraqueza,
+        maxFraqueza,
+        fatosFracos,
+        totalEstrelas: this.totalEstrelas(),
+        faseMax: this.faseMax(),
+      };
     },
 
     // ===================== BOSS RUSH =====================
