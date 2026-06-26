@@ -8,13 +8,26 @@ class BootScene extends Phaser.Scene {
   }
 
   preload() {
-    // Figuras dos heróis (SVG ilustrado — DiceBear/Lorelei, CC0).
+    // Figuras dos heróis (SVG ilustrado — DiceBear/Avataaars).
     HEROIS.forEach((h) => {
       this.load.svg(h.img, `assets/herois/${h.file || h.id}.svg`, {
         width: 256,
         height: 256,
       });
     });
+    // Roupas extras (loja) — cada uma como uma textura própria.
+    if (typeof ROUPAS !== "undefined") {
+      Object.values(ROUPAS).forEach((lista) => {
+        lista.forEach((r) => {
+          if (r.preco > 0) {
+            this.load.svg(r.id, `assets/herois/${r.file}.svg`, {
+              width: 256,
+              height: 256,
+            });
+          }
+        });
+      });
+    }
   }
 
   create() {

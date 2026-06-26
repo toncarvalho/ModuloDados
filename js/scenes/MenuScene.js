@@ -94,7 +94,25 @@ class MenuScene extends Phaser.Scene {
       tamFonte: 30,
       onClick: () => Util.trocarCena(this, "SettingsScene"),
     });
-    y += 140;
+    y += 124;
+
+    // Conquistas + Loja
+    UI.botao(this, cx - 135, y, "🏅 Conquistas", {
+      cor: 0xffd23e,
+      corTexto: "#0d0d12",
+      w: 250,
+      h: 96,
+      tamFonte: 28,
+      onClick: () => Util.trocarCena(this, "ConquistasScene"),
+    });
+    UI.botao(this, cx + 135, y, "🛍️ Loja", {
+      cor: 0xff3ea5,
+      w: 250,
+      h: 96,
+      tamFonte: 30,
+      onClick: () => Util.trocarCena(this, "LojaScene"),
+    });
+    y += 128;
 
     // stats
     this.add
@@ -126,12 +144,13 @@ class MenuScene extends Phaser.Scene {
     if (!meta) return;
     const heroi = getHeroi(meta.heroiId);
 
-    // avatar (toque → trocar avatar)
+    // avatar (toque → trocar avatar), já com a roupa equipada
+    const texHeroi = texturaAvatar(meta.heroiId);
     let av;
-    if (this.textures.exists(heroi.img)) {
-      av = this.add.image(56, 60, heroi.img).setDisplaySize(72, 72);
+    if (this.textures.exists(texHeroi)) {
+      av = this.add.image(56, 56, texHeroi).setDisplaySize(72, 72);
     } else {
-      av = this.add.text(56, 60, heroi.emoji, { fontSize: "54px" }).setOrigin(0.5);
+      av = this.add.text(56, 56, heroi.emoji, { fontSize: "54px" }).setOrigin(0.5);
     }
     av.setInteractive({ useHandCursor: true });
     av.on("pointerdown", () => {
@@ -140,11 +159,20 @@ class MenuScene extends Phaser.Scene {
     });
     // nome
     this.add
-      .text(102, 60, meta.nome, {
+      .text(102, 44, meta.nome, {
         fontFamily: UI.FONT,
-        fontSize: "34px",
+        fontSize: "32px",
         fontStyle: "bold",
         color: "#ffffff",
+      })
+      .setOrigin(0, 0.5);
+    // saldo de moedas
+    this.add
+      .text(102, 78, `🪙 ${Storage.getMoedas()}`, {
+        fontFamily: UI.FONT,
+        fontSize: "26px",
+        fontStyle: "bold",
+        color: "#ffd23e",
       })
       .setOrigin(0, 0.5);
 

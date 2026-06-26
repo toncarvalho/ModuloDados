@@ -27,7 +27,10 @@ const Storage = (() => {
     estrelas: {}, // { faseId: 0..3 } melhor estrela por fase
     fatos: {}, // { "min x max": peso }  peso alto = errou mais (repetir mais)
     bossRush: false, // desbloqueado ao zerar a última fase
-    estat: { acertos: 0, erros: 0, tempoMs: 0 }, // painel de progresso
+    estat: { acertos: 0, erros: 0, tempoMs: 0, maxCombo: 0, semErroVitorias: 0 },
+    moedas: 0, // economia (loja de roupas)
+    conquistas: {}, // { id: true } desbloqueadas
+    cosmeticos: { possui: [], roupa: {} }, // possui: [roupaId]; roupa: { heroId: roupaId }
   });
 
   const defaultsConfig = () => ({
@@ -336,6 +339,97 @@ const Storage = (() => {
     },
     bossRushDesbloqueado() {
       return !!state.bossRush;
+    },
+
+    // ===================== MOEDAS =====================
+    getMoedas() {
+      return state.moedas || 0;
+    },
+    addMoedas(n) {
+      if (!n) return;
+      state.moedas = (state.moedas || 0) + n;
+      salvarSave();
+    },
+    gastarMoedas(n) {
+      if ((state.moedas || 0) < n) return false;
+      state.moedas -= n;
+      salvarSave();
+      return true;
+    },
+
+    // ===================== ROUPAS (loja) =====================
+    roupaEquipada(heroId) {
+      const eq = state.cosmeticos && state.cosmeticos.roupa && state.cosmeticos.roupa[heroId];
+      if (eq) return eq;
+      return typeof roupaBase === "function" ? roupaBase(heroId).id : getHeroi(heroId).img;
+    },
+    possuiRoupa(roupaId) {
+      const r = typeof getRoupa === "function" ? getRoupa(roupaId) : null;
+      if (r && r.preco === 0) return true; // base é grátis/sempre possuída
+      return !!(state.cosmeticos && state.cosmeticos.possui.indexOf(roupaId) !== -1);
+    },
+    /** Compra (debita moedas) e já equipa. Retorna true se efetivou. */
+    comprarRoupa(heroId, roupaId, preco) {
+      if (!state.cosmeticos) state.cosmeticos = { possui: [], roupa: {} };
+      if (this.possuiRoupa(roupaId)) {
+        this.equiparRoupa(heroId, roupaId);
+        return true;
+      }
+      if ((state.moedas || 0) < preco) return false;
+      state.moedas -= preco;
+      state.cosmeticos.possui.push(roupaId);
+      state.cosmeticos.roupa[heroId] = roupaId;
+      salvarSave();
+      return true;
+    },
+    equiparRoupa(heroId, roupaId) {
+      if (!state.cosmeticos) state.cosmeticos = { possui: [], roupa: {} };
+      state.cosmeticos.roupa[heroId] = roupaId;
+      salvarSave();
+    },
+
+    // ===================== CONQUISTAS =====================
+    conquistasDesbloqueadas() {
+      return state.conquistas || {};
+    },
+    /**
+     * Avalia as CONQUISTAS contra um snapshot do progresso (+ ctx da partida),
+     * desbloqueia as novas, credita as recompensas e retorna a lista das novas.
+     */
+    avaliarConquistas(ctx) {
+      if (typeof CONQUISTAS === "undefined") return [];
+      if (!state.conquistas) state.conquistas = {};
+      const e = state.estat || {};
+      const snap = {
+        acertos: e.acertos || 0,
+        totalEstrelas: this.totalEstrelas(),
+        faseMax: this.faseMax(),
+        bossRush: !!state.bossRush,
+        maxCombo: e.maxCombo || 0,
+        semErroVitorias: e.semErroVitorias || 0,
+        tempoMs: e.tempoMs || 0,
+        estrelasFase: state.estrelas || {},
+      };
+      const novas = [];
+      CONQUISTAS.forEach((c) => {
+        if (!state.conquistas[c.id] && c.cond(snap)) {
+          state.conquistas[c.id] = true;
+          state.moedas = (state.moedas || 0) + (c.recompensa || 0);
+          novas.push(c);
+        }
+      });
+      if (novas.length) salvarSave();
+      return novas;
+    },
+    /** Atualiza recordes usados por conquistas ao terminar uma partida. */
+    registrarFimDePartida(info) {
+      if (!state.estat) state.estat = { acertos: 0, erros: 0, tempoMs: 0, maxCombo: 0, semErroVitorias: 0 };
+      const mc = (info && info.maxCombo) || 0;
+      if (mc > (state.estat.maxCombo || 0)) state.estat.maxCombo = mc;
+      if (info && info.venceu && info.semErro) {
+        state.estat.semErroVitorias = (state.estat.semErroVitorias || 0) + 1;
+      }
+      salvarSave();
     },
 
     // ===================== CONFIGURAÇÕES (globais do aparelho) =====================

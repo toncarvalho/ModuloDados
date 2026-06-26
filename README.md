@@ -31,6 +31,10 @@ resposta certa para atacar, encadeie **combos**, não perca suas **vidas** ❤�
   o conceito de multiplicação, não só a memória.
 - 📚 **Modo Treino**: pratique uma tabuada (ou Mix) sem tempo e sem perder vida.
 - 💀 **Boss Rush**: enfrente os 12 chefões em sequência (desbloqueia ao zerar a última fase).
+- 🏅 **Conquistas**: medalhas por marcos (combo x10, show perfeito, mestre do 7, imperatriz…),
+  cada uma rende **moedas**.
+- 🪙 **Moedas & 🛍️ Loja**: ganhe moedas jogando e desbloqueie **roupas** para os personagens
+  (cada roupa troca a figura); a roupa equipada aparece no HUD e no menu.
 - ⏸️ **Pausa**, **dica no erro** (mostra a conta certa) e **transições suaves**.
 - 🎵 Música de fundo + efeitos (Web Audio, sem arquivos), **vibração** e **leitura em voz alta** —
   tudo ligável/desligável em **Ajustes**.
