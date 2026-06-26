@@ -122,16 +122,19 @@ class ResultScene extends Phaser.Scene {
 
   /** Tela de fim do Desafio do Dia (foco na ofensiva/streak). */
   telaDesafio(cx, d) {
-    UI.titulo(this, cx, 130, "DESAFIO!", 84, "#ffd23e");
+    const venceu = d.venceu;
+    UI.titulo(this, cx, 130, venceu ? "DESAFIO!" : "QUASE!", 84, venceu ? "#ffd23e" : "#ff3ea5");
 
     // ofensiva grande
-    this.add.text(cx, 270, "🔥", { fontSize: "96px" }).setOrigin(0.5);
+    this.add.text(cx, 270, venceu ? "🔥" : "💪", { fontSize: "96px" }).setOrigin(0.5);
+    const fraseOfensiva =
+      d.ofensiva === 1 ? "1 dia seguido" : `${d.ofensiva} dias seguidos`;
     this.add
-      .text(cx, 392, d.ofensiva === 1 ? "1 dia seguido" : `${d.ofensiva} dias seguidos`, {
+      .text(cx, 392, venceu ? fraseOfensiva : `Ofensiva: ${d.ofensiva}`, {
         fontFamily: UI.FONT,
         fontSize: "44px",
         fontStyle: "bold",
-        color: "#ff8a3d",
+        color: venceu ? "#ff8a3d" : "#cccccc",
       })
       .setOrigin(0.5);
     this.add
@@ -160,7 +163,9 @@ class ResultScene extends Phaser.Scene {
         })
         .setOrigin(0.5);
     }
-    const aviso = d.jaFeito
+    const aviso = !venceu
+      ? "Você não completou o desafio — tente de novo! 💪"
+      : d.jaFeito
       ? "Você já fez o desafio de hoje — volte amanhã pra manter a ofensiva! 😉"
       : "Volte amanhã pra aumentar a ofensiva! 🔥";
     this.add
