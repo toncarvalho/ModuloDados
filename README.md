@@ -24,6 +24,11 @@ resposta certa para atacar, encadeie **combos**, não perca suas **vidas** ❤�
 - 🔥 Combos, pontuação, vidas e **recorde salvo** no aparelho (localStorage).
 - ⭐ **Estrelas por fase** (1–3) e relatório de fim de fase (precisão + fatos a treinar).
 - 🧠 **Repetição inteligente**: as contas que você mais erra aparecem com mais frequência.
+- 📊 **Painel de progresso** (pais/professor): precisão, tempo de jogo, estrelas e um **mapa de
+  calor das tabuadas** (verde = dominada, vermelho = treinar mais), com atalho para treinar os
+  pontos fracos.
+- 🔢 **Visualização no erro**: ao errar, mostra a conta como **grade de pontos** (a×b) reforçando
+  o conceito de multiplicação, não só a memória.
 - 📚 **Modo Treino**: pratique uma tabuada (ou Mix) sem tempo e sem perder vida.
 - 💀 **Boss Rush**: enfrente os 12 chefões em sequência (desbloqueia ao zerar a última fase).
 - ⏸️ **Pausa**, **dica no erro** (mostra a conta certa) e **transições suaves**.

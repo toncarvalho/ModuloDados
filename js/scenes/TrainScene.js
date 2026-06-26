@@ -7,11 +7,30 @@ class TrainScene extends Phaser.Scene {
     super("TrainScene");
   }
 
+  init(data) {
+    // permite iniciar direto numa tabuada (ex.: vindo do painel de progresso)
+    this.tabInicial = (data && data.tabuadas) || null;
+    this.tituloInicial = (data && data.titulo) || "Treino dirigido";
+  }
+
   create() {
     this.cameras.main.fadeIn(180, 13, 13, 18);
     this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, "bg");
     AudioFX.sincronizarMusica();
-    this.mostrarSelecao();
+
+    // tempo de jogo (painel de progresso)
+    this._tInicio = this.time.now;
+    this.events.once("shutdown", () => {
+      try {
+        Storage.adicionarTempo(this.time.now - this._tInicio);
+      } catch (e) {}
+    });
+
+    if (this.tabInicial && this.tabInicial.length) {
+      this.iniciarTreino(this.tabInicial, this.tituloInicial);
+    } else {
+      this.mostrarSelecao();
+    }
   }
 
   // ---- seleção da tabuada ----
@@ -163,6 +182,10 @@ class TrainScene extends Phaser.Scene {
 
   novaPergunta() {
     this.txtDica.setVisible(false);
+    if (this.flashcard) {
+      this.flashcard.destroy();
+      this.flashcard = null;
+    }
     this.q = MathEngine.gerarPergunta(this.tab, JOGO.faixaFator, Storage.getFatos());
     this.opcoes = MathEngine.gerarOpcoes(this.q.resposta);
     this.txtPergunta.setText(`${this.q.texto} = ?`);
@@ -195,6 +218,7 @@ class TrainScene extends Phaser.Scene {
         if (b.label.text === `${this.q.resposta}`) b.setCor(0x36d96b);
       });
       this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
+      this.flashcard = Util.flashcardMultiplicacao(this, this.q.a, this.q.b, 0x36d96b);
       AudioFX.erro();
       Util.vibrar([60, 40, 60]);
       this.time.delayedCall(1800, () => this.novaPergunta());

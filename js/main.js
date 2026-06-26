@@ -45,6 +45,7 @@ const config = {
     ResultScene,
     SettingsScene,
     TrainScene,
+    ProgressScene,
   ],
 };
 

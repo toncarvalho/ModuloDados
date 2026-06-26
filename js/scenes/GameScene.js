@@ -44,6 +44,14 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.fadeIn(180, 13, 13, 18);
     this.add.image(cx, GAME_HEIGHT / 2, "bg").setTint(this.fase.corTema);
 
+    // tempo de jogo (painel de progresso): acumula ao sair da cena
+    this._tInicio = this.time.now;
+    this.events.once("shutdown", () => {
+      try {
+        Storage.adicionarTempo(this.time.now - this._tInicio);
+      } catch (e) {}
+    });
+
     this.particulas = this.add.particles(0, 0, "brilho", {
       speed: { min: 120, max: 360 },
       scale: { start: 0.9, end: 0 },
@@ -278,6 +286,10 @@ class GameScene extends Phaser.Scene {
   novaPergunta() {
     if (this.acabou) return;
     this.txtDica.setVisible(false);
+    if (this.flashcard) {
+      this.flashcard.destroy();
+      this.flashcard = null;
+    }
     this.q = MathEngine.gerarPergunta(
       this.fase.tabuadas,
       JOGO.faixaFator,
@@ -442,6 +454,7 @@ class GameScene extends Phaser.Scene {
       if (b.label.text === `${this.q.resposta}`) b.setCor(0x36d96b);
     });
     this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
+    this.flashcard = Util.flashcardMultiplicacao(this, this.q.a, this.q.b, 0x36d96b);
     this.flutuarTexto("-1 ❤️", "#ff5050");
     this.atualizarHUD();
 

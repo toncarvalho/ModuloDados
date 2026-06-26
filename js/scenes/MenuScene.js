@@ -68,22 +68,30 @@ class MenuScene extends Phaser.Scene {
       y += 130;
     }
 
-    // Treino + Ajustes (lado a lado)
-    UI.botao(this, cx - 135, y, "📚 Treino", {
+    // Treino + Progresso + Ajustes (lado a lado)
+    UI.botao(this, cx - 240, y, "📚 Treino", {
       cor: 0xff3ea5,
-      w: 250,
+      w: 224,
       h: 100,
-      tamFonte: 34,
+      tamFonte: 30,
       onClick: () => {
         AudioFX.unlock();
         Util.trocarCena(this, "TrainScene");
       },
     });
-    UI.botao(this, cx + 135, y, "⚙️ Ajustes", {
-      cor: 0x2a2a3a,
-      w: 250,
+    UI.botao(this, cx, y, "📊 Progresso", {
+      cor: 0x36d96b,
+      corTexto: "#0d0d12",
+      w: 224,
       h: 100,
-      tamFonte: 34,
+      tamFonte: 28,
+      onClick: () => Util.trocarCena(this, "ProgressScene"),
+    });
+    UI.botao(this, cx + 240, y, "⚙️ Ajustes", {
+      cor: 0x2a2a3a,
+      w: 224,
+      h: 100,
+      tamFonte: 30,
       onClick: () => Util.trocarCena(this, "SettingsScene"),
     });
     y += 140;
