@@ -310,7 +310,7 @@ class ProfileScene extends Phaser.Scene {
 
     this.layer.add(
       this.add
-        .text(cx, 470, "Escolha sua heroína:", {
+        .text(cx, 445, "Escolha seu personagem:", {
           fontFamily: UI.FONT,
           fontSize: "28px",
           color: "#ffd23e",
@@ -319,20 +319,20 @@ class ProfileScene extends Phaser.Scene {
         .setOrigin(0.5)
     );
 
-    // 3 cards de heroína (lado a lado)
-    const x0 = cx - 210;
-    const dx = 210;
+    // cards dos personagens em grade 2×3 (comporta 5–6)
+    const colX = [cx - 108, cx + 108];
+    const rowY = [552, 748, 944];
     HEROIS.forEach((heroi, i) => {
-      this.cardHeroi(x0 + i * dx, 640, heroi);
+      this.cardHeroi(colX[i % 2], rowY[Math.floor(i / 2)], heroi);
     });
 
     // Criar
     this.layer.add(
-      UI.botao(this, cx, 900, "✨  Criar jogador", {
+      UI.botao(this, cx, 1100, "✨  Criar jogador", {
         cor: 0x36d96b,
         w: 500,
-        h: 110,
-        tamFonte: 40,
+        h: 96,
+        tamFonte: 38,
         corTexto: "#0d0d12",
         onClick: () => this.criar(),
       })
@@ -341,7 +341,7 @@ class ProfileScene extends Phaser.Scene {
     // Voltar (à seleção, se houver perfis)
     const temPerfis = Storage.listarPerfis().length > 0;
     this.layer.add(
-      UI.botao(this, cx, 1030, temPerfis ? "↩  Voltar" : "↩  Menu", {
+      UI.botao(this, cx, 1206, temPerfis ? "↩  Voltar" : "↩  Menu", {
         cor: 0x444455,
         w: 360,
         h: 86,
@@ -359,8 +359,8 @@ class ProfileScene extends Phaser.Scene {
   }
 
   cardHeroi(x, y, heroi) {
-    const w = 196;
-    const h = 250;
+    const w = 200;
+    const h = 184;
     const selecionado = heroi.id === this.novoHeroiId;
     const cont = this.add.container(x, y);
     this.layer.add(cont);
@@ -374,17 +374,17 @@ class ProfileScene extends Phaser.Scene {
 
     let av;
     if (this.textures.exists(heroi.img)) {
-      av = this.add.image(0, -40, heroi.img).setDisplaySize(128, 128);
+      av = this.add.image(0, -32, heroi.img).setDisplaySize(96, 96);
     } else {
-      av = this.add.text(0, -40, heroi.emoji, { fontSize: "96px" }).setOrigin(0.5);
+      av = this.add.text(0, -32, heroi.emoji, { fontSize: "74px" }).setOrigin(0.5);
     }
     cont.add(av);
 
     cont.add(
       this.add
-        .text(0, 56, heroi.nome, {
+        .text(0, 42, heroi.nome, {
           fontFamily: UI.FONT,
-          fontSize: "34px",
+          fontSize: "30px",
           fontStyle: "bold",
           color: "#" + heroi.cor.toString(16).padStart(6, "0"),
         })
@@ -394,9 +394,9 @@ class ProfileScene extends Phaser.Scene {
     if (selecionado) {
       cont.add(
         this.add
-          .text(0, 100, "✓ escolhida", {
+          .text(0, 74, "✓", {
             fontFamily: UI.FONT,
-            fontSize: "22px",
+            fontSize: "28px",
             fontStyle: "bold",
             color: "#36d96b",
           })
