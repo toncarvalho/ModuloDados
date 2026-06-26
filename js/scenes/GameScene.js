@@ -445,7 +445,7 @@ class GameScene extends Phaser.Scene {
     this.flutuarTexto("-1 ❤️", "#ff5050");
     this.atualizarHUD();
 
-    this.time.delayedCall(750, () => {
+    this.time.delayedCall(1500, () => {
       this.respondendo = false;
       if (this.vidas <= 0) this.derrota();
       else this.novaPergunta();

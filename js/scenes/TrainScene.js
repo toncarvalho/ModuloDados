@@ -197,7 +197,7 @@ class TrainScene extends Phaser.Scene {
       this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
       AudioFX.erro();
       Util.vibrar([60, 40, 60]);
-      this.time.delayedCall(900, () => this.novaPergunta());
+      this.time.delayedCall(1800, () => this.novaPergunta());
     }
     this.atualizarPlacar();
   }
