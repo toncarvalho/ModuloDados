@@ -141,12 +141,12 @@ class TrainScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setVisible(false);
 
-    // 4 botões reaproveitados
+    // 4 botões reaproveitados (alvos grandes + folga de toque)
     this.coresBotoes = [0xff3ea5, 0x7b2ff7, 0x2ff7e6, 0xffd23e];
     this.botoes = [];
-    const baseY = 760;
-    const dx = 240;
-    const dy = 170;
+    const baseY = 776;
+    const dx = 344;
+    const dy = 182;
     for (let i = 0; i < 4; i++) {
       const col = i % 2;
       const row = Math.floor(i / 2);
@@ -156,10 +156,11 @@ class TrainScene extends Phaser.Scene {
       this.botoes.push(
         UI.botao(this, x, y, "", {
           cor: this.coresBotoes[i],
-          w: 220,
-          h: 140,
-          tamFonte: 56,
+          w: 320,
+          h: 156,
+          tamFonte: 64,
           corTexto,
+          hitPad: 11,
         })
       );
     }
@@ -194,8 +195,9 @@ class TrainScene extends Phaser.Scene {
       const b = this.botoes[i];
       b.setLabel(`${valor}`);
       b.setCor(this.coresBotoes[i]);
+      b.setScale(1);
       b.setHandler(() => this.responder(valor, b));
-      b.setVisible(true).setInteractive();
+      b.ligar();
     });
     this.respondendo = false;
   }
