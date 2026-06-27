@@ -33,7 +33,8 @@ const config = {
     powerPreference: "high-performance",
   },
   fps: { target: 60, min: 30 },
-  input: { activePointers: 1 },
+  // 2 ponteiros: um dedo/palma extra não bloqueia o toque válido (crianças).
+  input: { activePointers: 2 },
   disableContextMenu: true,
   scene: [
     BootScene,

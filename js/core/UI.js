@@ -15,6 +15,7 @@ const UI = (() => {
     const corFundo = opts.cor ?? 0xff3ea5;
     const corTexto = opts.corTexto || "#ffffff";
     const tamFonte = opts.tamFonte || 40;
+    const pad = opts.hitPad || 0; // folga extra de toque além do visual
 
     const cont = scene.add.container(x, y);
 
@@ -33,8 +34,10 @@ const UI = (() => {
 
     cont.add([g, txt]);
     cont.setSize(w, h);
+    // Área de toque CENTRADA (com folga opcional). Mantida explícita para que
+    // ligar()/desligar() não a percam (não re-chamamos setInteractive).
     cont.setInteractive(
-      new Phaser.Geom.Rectangle(-w / 2, -h / 2, w, h),
+      new Phaser.Geom.Rectangle(-w / 2 - pad, -h / 2 - pad, w + 2 * pad, h + 2 * pad),
       Phaser.Geom.Rectangle.Contains
     );
 
@@ -64,6 +67,17 @@ const UI = (() => {
     };
     cont.setLabel = (str) => {
       txt.setText(str);
+    };
+    // liga/desliga o toque SEM recriar a área interativa (preserva a hit area).
+    cont.ligar = () => {
+      if (cont.input) cont.input.enabled = true;
+      cont.setVisible(true);
+      return cont;
+    };
+    cont.desligar = () => {
+      if (cont.input) cont.input.enabled = false;
+      cont.setVisible(false);
+      return cont;
     };
     cont.label = txt;
     return cont;
