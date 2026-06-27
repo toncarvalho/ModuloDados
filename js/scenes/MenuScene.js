@@ -92,7 +92,12 @@ class MenuScene extends Phaser.Scene {
       w: 224,
       h: 100,
       tamFonte: 30,
-      onClick: () => Util.trocarCena(this, "SettingsScene"),
+      // Ajustes agora é uma tela em HTML (overlay) — sem troca de cena: a
+      // MenuScene segue viva por baixo e reaparece ao fechar o overlay.
+      onClick: () => {
+        AudioFX.unlock();
+        UIScreens.abrir("ajustes");
+      },
     });
     y += 124;
 

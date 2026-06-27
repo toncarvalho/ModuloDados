@@ -13,9 +13,24 @@
   <title>Idol Math ⚡ Tabuada Kpop Metal</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/ui.css" />
 </head>
 <body>
   <div id="game-root"></div>
+
+  <!-- Camada de UI em HTML (telas de menu) sobreposta ao canvas -->
+  <div id="ui-root" hidden>
+    <section class="ui-screen" id="screen-ajustes" hidden>
+      <div class="ui-card">
+        <h1 class="ui-title">⚙️ AJUSTES</h1>
+        <button class="ui-toggle" type="button" data-cfg="musica" aria-pressed="false"></button>
+        <button class="ui-toggle" type="button" data-cfg="efeitos" aria-pressed="false"></button>
+        <button class="ui-toggle" type="button" data-cfg="timer" aria-pressed="false"></button>
+        <button class="ui-toggle" type="button" data-cfg="voz" aria-pressed="false"></button>
+        <button class="ui-btn ui-voltar" type="button" data-acao="voltar">↩  Voltar ao jogo</button>
+      </div>
+    </section>
+  </div>
 
   <!-- Phaser 3 (vendorizado localmente, funciona offline) -->
   <script src="vendor/phaser.min.js"></script>
@@ -46,6 +61,9 @@
   <script src="js/scenes/ProgressScene.js"></script>
   <script src="js/scenes/LojaScene.js"></script>
   <script src="js/scenes/ConquistasScene.js"></script>
+
+  <!-- Camada de UI em HTML -->
+  <script src="js/ui/screens.js"></script>
 
   <!-- Bootstrap -->
   <script src="js/main.js"></script>

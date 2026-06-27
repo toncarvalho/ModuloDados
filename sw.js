@@ -2,14 +2,16 @@
  * Service Worker — cache do app shell para o jogo funcionar 100% offline
  * e carregar rápido. Estratégia cache-first com fallback de rede.
  */
-const CACHE = "idolmath-v9";
+const CACHE = "idolmath-v10";
 const ASSETS = [
   "./",
   "index.html",
   "manifest.json",
   "css/style.css",
+  "css/ui.css",
   "vendor/phaser.min.js",
   "js/main.js",
+  "js/ui/screens.js",
   "js/core/Storage.js",
   "js/core/MathEngine.js",
   "js/core/Audio.js",
