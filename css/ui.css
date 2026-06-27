@@ -1,0 +1,105 @@
+/**
+ * Camada de UI em HTML (sobreposta ao canvas do jogo) — telas de menu nativas,
+ * acessíveis e com botões HTML reais (sem bugs de área de toque). Tema neon/metal.
+ * Piloto: tela de Ajustes. As próximas telas seguem o mesmo padrão.
+ */
+
+#ui-root {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  pointer-events: auto;
+}
+#ui-root[hidden] {
+  display: none;
+}
+
+.ui-screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  /* fundo da tela (mesma vibe do jogo) */
+  background:
+    radial-gradient(circle at 18% 8%, rgba(123, 47, 247, 0.5), transparent 55%),
+    radial-gradient(circle at 85% 95%, rgba(255, 62, 165, 0.45), transparent 55%),
+    #0d0d12;
+  animation: ui-fade 0.18s ease-out;
+}
+.ui-screen[hidden] {
+  display: none;
+}
+
+@keyframes ui-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ui-card {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: rgba(13, 13, 18, 0.65);
+  border: 2px solid rgba(47, 247, 230, 0.45);
+  border-radius: 22px;
+  padding: 26px 22px;
+  box-shadow: 0 0 30px rgba(255, 62, 165, 0.25);
+}
+
+.ui-title {
+  margin: 4px 0 10px;
+  text-align: center;
+  font-size: clamp(34px, 9vw, 52px);
+  font-weight: 800;
+  color: #2ff7e6;
+  text-shadow: 0 0 16px rgba(255, 62, 165, 0.7);
+  letter-spacing: 1px;
+}
+
+/* botões grandes, acessíveis (alvo de toque generoso) */
+.ui-toggle,
+.ui-btn {
+  font-family: inherit;
+  font-weight: 700;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  cursor: pointer;
+  min-height: 72px;
+  padding: 14px 18px;
+  font-size: clamp(18px, 5vw, 24px);
+  transition: transform 0.05s ease, filter 0.12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ui-toggle:active,
+.ui-btn:active {
+  transform: scale(0.97);
+}
+.ui-toggle:focus-visible,
+.ui-btn:focus-visible {
+  outline: 3px solid #ffd23e;
+  outline-offset: 2px;
+}
+
+/* toggle desligado / ligado */
+.ui-toggle {
+  background: #2a2a3a;
+  color: #aaaaaa;
+}
+.ui-toggle.on {
+  background: #36d96b;
+  color: #0d0d12;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.ui-btn {
+  background: #444455;
+  color: #ffffff;
+}
+.ui-voltar {
+  margin-top: 6px;
+  background: #7b2ff7;
+}
