@@ -2,7 +2,7 @@
  * Service Worker — cache do app shell para o jogo funcionar 100% offline
  * e carregar rápido. Estratégia cache-first com fallback de rede.
  */
-const CACHE = "idolmath-v8";
+const CACHE = "idolmath-v9";
 const ASSETS = [
   "./",
   "index.html",
@@ -68,22 +68,43 @@ self.addEventListener("activate", (e) => {
   self.clients.claim();
 });
 
+// "App shell" (código): rede-primeiro p/ pegar atualização; cache como fallback
+// offline. Estáticos pesados (phaser, svg, imagens): cache-primeiro (rápido).
+function ehCodigo(req) {
+  if (req.mode === "navigate") return true;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return false;
+  return /\.(?:html|js|css|json)$/.test(url.pathname) || url.pathname === "/";
+}
+
+function guardar(req, resp) {
+  if (resp && resp.ok && req.url.startsWith(self.location.origin)) {
+    const copy = resp.clone();
+    caches.open(CACHE).then((c) => c.put(req, copy));
+  }
+  return resp;
+}
+
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  const req = e.request;
+
+  if (ehCodigo(req)) {
+    // network-first
+    e.respondWith(
+      fetch(req)
+        .then((resp) => guardar(req, resp))
+        .catch(() =>
+          caches.match(req).then((hit) => hit || caches.match("index.html"))
+        )
+    );
+    return;
+  }
+
+  // cache-first (estáticos)
   e.respondWith(
-    caches.match(e.request).then(
-      (hit) =>
-        hit ||
-        fetch(e.request)
-          .then((resp) => {
-            // guarda cópias do mesmo domínio
-            if (resp.ok && e.request.url.startsWith(self.location.origin)) {
-              const copy = resp.clone();
-              caches.open(CACHE).then((c) => c.put(e.request, copy));
-            }
-            return resp;
-          })
-          .catch(() => caches.match("index.html"))
+    caches.match(req).then(
+      (hit) => hit || fetch(req).then((resp) => guardar(req, resp)).catch(() => hit)
     )
   );
 });

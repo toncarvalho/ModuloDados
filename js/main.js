@@ -54,4 +54,26 @@ const config = {
 
 window.addEventListener("load", () => {
   window.game = new Phaser.Game(config);
+
+  // No Android, a barra de endereço dinâmica do Chrome redimensiona a viewport
+  // e os limites de input do Phaser podem ficar desatualizados → toque deslocado.
+  // Recalcular a escala/limites nessas mudanças mantém o toque alinhado.
+  const realinhar = () => {
+    if (window.game && window.game.scale) {
+      try {
+        window.game.scale.refresh();
+      } catch (e) {}
+    }
+  };
+  let agendado = null;
+  const realinharDebounce = () => {
+    if (agendado) clearTimeout(agendado);
+    agendado = setTimeout(realinhar, 60);
+  };
+  window.addEventListener("resize", realinharDebounce);
+  window.addEventListener("orientationchange", realinharDebounce);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", realinharDebounce);
+    window.visualViewport.addEventListener("scroll", realinharDebounce);
+  }
 });

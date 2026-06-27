@@ -50,11 +50,21 @@
   <!-- Bootstrap -->
   <script src="js/main.js"></script>
 
-  <!-- Service Worker (PWA offline) -->
+  <!-- Service Worker (PWA offline) + atualização automática -->
   <script>
     if ("serviceWorker" in navigator) {
+      // quando um SW novo assume o controle, recarrega 1x p/ pegar a versão nova
+      let recarregou = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (recarregou) return;
+        recarregou = true;
+        window.location.reload();
+      });
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("sw.js").catch(() => {});
+        navigator.serviceWorker.register("sw.js").then((reg) => {
+          // procura atualização a cada carregamento
+          reg.update();
+        }).catch(() => {});
       });
     }
   </script>
