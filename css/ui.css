@@ -40,6 +40,8 @@
 .ui-card {
   width: 100%;
   max-width: 480px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -102,4 +104,238 @@
 .ui-voltar {
   margin-top: 6px;
   background: #7b2ff7;
+}
+
+/* subtítulo (contagem / nome do jogador / saldo) */
+.ui-sub {
+  margin: -4px 0 4px;
+  text-align: center;
+  font-size: clamp(20px, 5.5vw, 28px);
+  font-weight: 800;
+  color: #2ff7e6;
+}
+
+/* mensagem de aviso (ex.: moedas insuficientes) */
+.ui-msg {
+  min-height: 24px;
+  margin: 0;
+  text-align: center;
+  font-size: clamp(16px, 4.4vw, 22px);
+  font-weight: 700;
+  color: #ff8080;
+}
+
+/* ---------------- CONQUISTAS ---------------- */
+.ui-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.conq-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 2px solid #555566;
+  background: rgba(0, 0, 0, 0.35);
+}
+.conq-row.done {
+  border-color: #ffd23e;
+  background: rgba(0, 0, 0, 0.5);
+}
+.conq-ico {
+  font-size: 34px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.conq-row.locked .conq-ico {
+  opacity: 0.5;
+}
+.conq-txt {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.conq-txt b {
+  font-size: clamp(16px, 4.6vw, 21px);
+  color: #ffffff;
+}
+.conq-txt small {
+  font-size: clamp(12px, 3.6vw, 16px);
+  color: #cccccc;
+}
+.conq-row.locked .conq-txt b {
+  color: #888899;
+}
+.conq-row.locked .conq-txt small {
+  color: #777788;
+}
+.conq-pre {
+  flex: 0 0 auto;
+  font-size: clamp(14px, 4vw, 19px);
+  font-weight: 800;
+  color: #ffd23e;
+}
+.conq-row.locked .conq-pre {
+  color: #777788;
+}
+
+/* ---------------- PROGRESSO ---------------- */
+.prog-vazio {
+  text-align: center;
+  font-size: clamp(22px, 6vw, 32px);
+  color: #ffffff;
+  line-height: 1.5;
+  margin: 40px 0;
+}
+.prog-nums {
+  display: flex;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid rgba(47, 247, 230, 0.6);
+  border-radius: 18px;
+  padding: 14px 8px;
+}
+.prog-num {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.prog-num .pn-ico {
+  font-size: 28px;
+}
+.prog-num b {
+  font-size: clamp(22px, 6.5vw, 34px);
+  color: #ffffff;
+}
+.prog-num small {
+  font-size: clamp(12px, 3.6vw, 18px);
+  color: #aabbcc;
+}
+.prog-legenda {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: clamp(15px, 4vw, 20px);
+  font-weight: 700;
+  color: #ffd23e;
+}
+.prog-heat {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.heat-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 0.78;
+  border-radius: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  font-size: clamp(22px, 6vw, 34px);
+  font-weight: 800;
+  color: #ffffff;
+}
+.heat-cell.verde {
+  background: #36d96b;
+}
+.heat-cell.amarelo {
+  background: #ffd23e;
+  color: #0d0d12;
+}
+.heat-cell.vermelho {
+  background: #ff3030;
+}
+.prog-focar {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: clamp(18px, 4.8vw, 26px);
+  font-weight: 700;
+  color: #ffffff;
+}
+.prog-treino {
+  margin-top: 8px;
+  background: #ff3ea5;
+}
+
+/* ---------------- LOJA ---------------- */
+.loja-preview {
+  align-self: center;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  border: 3px solid var(--cor, #ff3ea5);
+  background: rgba(0, 0, 0, 0.4);
+}
+.loja-preview img {
+  width: 150px;
+  height: 150px;
+}
+.loja-hero {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(22px, 6vw, 30px);
+  font-weight: 800;
+}
+.loja-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.roupa-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 6px;
+  border-radius: 16px;
+  border: 3px solid var(--cor, #ff3ea5);
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.05s ease;
+}
+.roupa-card.equipada {
+  border-color: #36d96b;
+  border-width: 4px;
+}
+.roupa-card:active {
+  transform: scale(0.96);
+}
+.roupa-card:focus-visible {
+  outline: 3px solid #ffd23e;
+  outline-offset: 2px;
+}
+.roupa-img {
+  width: 84px;
+  height: 84px;
+}
+.roupa-nome {
+  font-size: clamp(13px, 3.6vw, 18px);
+  font-weight: 800;
+  color: #ffffff;
+}
+.roupa-estado {
+  font-size: clamp(13px, 3.6vw, 18px);
+  font-weight: 800;
+  color: #ffd23e;
+}
+.roupa-card.possui .roupa-estado {
+  color: #2ff7e6;
+}
+.roupa-card.equipada .roupa-estado {
+  color: #36d96b;
+}
+.loja-dica {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(13px, 3.4vw, 16px);
+  color: #9a9aae;
 }
