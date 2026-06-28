@@ -36,20 +36,8 @@ const config = {
   // 2 ponteiros: um dedo/palma extra não bloqueia o toque válido (crianças).
   input: { activePointers: 2 },
   disableContextMenu: true,
-  scene: [
-    BootScene,
-    ProfileScene,
-    MenuScene,
-    HeroScene,
-    StageScene,
-    GameScene,
-    ResultScene,
-    SettingsScene,
-    TrainScene,
-    ProgressScene,
-    LojaScene,
-    ConquistasScene,
-  ],
+  // Navegação é HTML (UIScreens); o Phaser roda só o gameplay.
+  scene: [BootScene, GameScene, TrainScene],
 };
 
 window.addEventListener("load", () => {

@@ -35,8 +35,10 @@ class BootScene extends Phaser.Scene {
     this.gerarBrilho();
     this.gerarEstrela();
     this.gerarRaio();
-    // Tem jogador ativo? vai ao menu; senão, escolhe/cria um perfil.
-    this.scene.start(Storage.temPerfilAtual() ? "MenuScene" : "ProfileScene");
+    // Navegação é HTML (overlay): abre o menu (ou a criação de perfil).
+    // A BootScene fica como cena "host" ociosa por baixo do overlay; o gameplay
+    // (GameScene/TrainScene) é iniciado sob demanda pelo UIScreens.
+    UIScreens.irInicio();
   }
 
   /** Fundo vertical gradiente neon roxo->preto->rosa com estrelas estáticas. */

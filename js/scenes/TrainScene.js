@@ -84,7 +84,10 @@ class TrainScene extends Phaser.Scene {
         w: 360,
         h: 96,
         tamFonte: 34,
-        onClick: () => Util.trocarCena(this, "MenuScene"),
+        onClick: () => {
+          UIScreens.abrir("menu");
+          this.scene.stop();
+        },
       })
     );
   }
@@ -170,7 +173,10 @@ class TrainScene extends Phaser.Scene {
       w: 320,
       h: 80,
       tamFonte: 30,
-      onClick: () => Util.trocarCena(this, "MenuScene"),
+      onClick: () => {
+        UIScreens.abrir("menu");
+        this.scene.stop();
+      },
     });
     this.atualizarPlacar();
   }

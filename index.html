@@ -27,7 +27,7 @@
         <button class="ui-toggle" type="button" data-cfg="efeitos" aria-pressed="false"></button>
         <button class="ui-toggle" type="button" data-cfg="timer" aria-pressed="false"></button>
         <button class="ui-toggle" type="button" data-cfg="voz" aria-pressed="false"></button>
-        <button class="ui-btn ui-voltar" type="button" data-acao="voltar">↩  Voltar ao jogo</button>
+        <button class="ui-btn ui-voltar" type="button" data-acao="menu">↩  Menu</button>
       </div>
     </section>
 
@@ -58,6 +58,51 @@
         <button class="ui-btn ui-voltar" type="button" data-acao="voltar">↩  Menu</button>
       </div>
     </section>
+
+    <section class="ui-screen" id="screen-menu" hidden>
+      <div class="ui-card">
+        <h1 class="ui-title menu-titulo">IDOL MATH</h1>
+        <div id="menu-corpo"></div>
+      </div>
+    </section>
+
+    <section class="ui-screen" id="screen-grade" hidden>
+      <div class="ui-card">
+        <h1 class="ui-title">🗺️ FASES</h1>
+        <p class="ui-sub" id="grade-sub"></p>
+        <div id="grade-corpo"></div>
+        <button class="ui-btn ui-voltar" type="button" data-acao="menu">↩  Menu</button>
+      </div>
+    </section>
+
+    <section class="ui-screen" id="screen-perfis" hidden>
+      <div class="ui-card">
+        <h1 class="ui-title" id="perfis-titulo">QUEM VAI JOGAR?</h1>
+        <div id="perfis-corpo"></div>
+      </div>
+    </section>
+
+    <section class="ui-screen" id="screen-heroi" hidden>
+      <div class="ui-card">
+        <h1 class="ui-title">🔄 TROCAR AVATAR</h1>
+        <div id="heroi-corpo"></div>
+        <button class="ui-btn ui-voltar" type="button" data-acao="menu">↩  Menu</button>
+      </div>
+    </section>
+
+    <section class="ui-screen" id="screen-resultado" hidden>
+      <div class="ui-card">
+        <h1 class="ui-title" id="resultado-titulo"></h1>
+        <div id="resultado-corpo"></div>
+      </div>
+    </section>
+
+    <section class="ui-screen" id="screen-confirma" hidden>
+      <div class="ui-card">
+        <h1 class="ui-title" style="color:#ff3030">REMOVER?</h1>
+        <div id="confirma-corpo"></div>
+      </div>
+    </section>
   </div>
 
   <!-- Phaser 3 (vendorizado localmente, funciona offline) -->
@@ -76,19 +121,10 @@
   <script src="js/data/roupas.js"></script>
   <script src="js/data/conquistas.js"></script>
 
-  <!-- Scenes -->
+  <!-- Cenas Phaser: só o gameplay (Boot gera texturas; navegação é HTML) -->
   <script src="js/scenes/BootScene.js"></script>
-  <script src="js/scenes/ProfileScene.js"></script>
-  <script src="js/scenes/MenuScene.js"></script>
-  <script src="js/scenes/HeroScene.js"></script>
-  <script src="js/scenes/StageScene.js"></script>
   <script src="js/scenes/GameScene.js"></script>
-  <script src="js/scenes/ResultScene.js"></script>
-  <script src="js/scenes/SettingsScene.js"></script>
   <script src="js/scenes/TrainScene.js"></script>
-  <script src="js/scenes/ProgressScene.js"></script>
-  <script src="js/scenes/LojaScene.js"></script>
-  <script src="js/scenes/ConquistasScene.js"></script>
 
   <!-- Camada de UI em HTML -->
   <script src="js/ui/screens.js"></script>
