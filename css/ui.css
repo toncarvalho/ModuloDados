@@ -1,7 +1,8 @@
 /**
- * Camada de UI em HTML (sobreposta ao canvas do jogo) — telas de menu nativas,
- * acessíveis e com botões HTML reais (sem bugs de área de toque). Tema neon/metal.
- * Piloto: tela de Ajustes. As próximas telas seguem o mesmo padrão.
+ * Camada de UI em HTML (sobreposta ao canvas do jogo) — toda a navegação
+ * (Menu, Perfis, Herói, Grade, Ajustes, Conquistas, Progresso, Loja, Resultado)
+ * em botões/inputs nativos, acessíveis e sem bugs de área de toque. Tema neon/metal.
+ * Só o gameplay (GameScene/TrainScene) continua no canvas Phaser.
  */
 
 #ui-root {
@@ -339,3 +340,388 @@
   font-size: clamp(13px, 3.4vw, 16px);
   color: #9a9aae;
 }
+
+/* ---------------- MENU ---------------- */
+.menu-titulo {
+  color: #ff3ea5;
+  text-shadow: 0 0 18px rgba(47, 247, 230, 0.7);
+}
+#menu-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.menu-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 16px;
+}
+.menu-avatar {
+  flex: 0 0 auto;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border-radius: 50%;
+  border: 3px solid #2ff7e6;
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+.menu-avatar img {
+  width: 100%;
+  height: 100%;
+}
+.menu-id {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.menu-nome {
+  font-size: clamp(20px, 5.5vw, 28px);
+  font-weight: 800;
+  color: #fff;
+}
+.menu-saldo {
+  font-size: clamp(15px, 4vw, 20px);
+  font-weight: 700;
+  color: #ffd23e;
+}
+.menu-trocar {
+  flex: 0 0 auto;
+  width: 64px;
+  min-height: 64px;
+  padding: 0;
+  font-size: 26px;
+  background: #2a2a3a;
+}
+.menu-jogar {
+  background: #7b2ff7;
+  font-size: clamp(26px, 7vw, 36px);
+  min-height: 88px;
+}
+.menu-continuar {
+  background: #36d96b;
+  color: #0d0d12;
+}
+.menu-grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.menu-grid3 .ui-btn {
+  min-height: 84px;
+  font-size: clamp(14px, 3.6vw, 19px);
+  padding: 8px 6px;
+}
+.mg-rosa { background: #ff3ea5; }
+.mg-verde { background: #36d96b; color: #0d0d12; }
+.mg-cinza { background: #2a2a3a; }
+.mg-laranja { background: #ff7a1a; }
+.mg-ouro { background: #ffd23e; color: #0d0d12; }
+.menu-stats {
+  margin: 2px 0 0;
+  text-align: center;
+  font-size: clamp(14px, 3.6vw, 18px);
+  font-weight: 700;
+  color: #2ff7e6;
+}
+
+/* ---------------- GRADE DE FASES ---------------- */
+.grade-tiles {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.fase-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  border: 3px solid var(--cor, #ff3ea5);
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.05s ease;
+}
+.fase-tile:active { transform: scale(0.95); }
+.fase-tile:focus-visible { outline: 3px solid #ffd23e; outline-offset: 2px; }
+.fase-tile.bloq {
+  border-color: #555;
+  background: rgba(0, 0, 0, 0.3);
+  cursor: default;
+}
+.ft-num {
+  font-size: clamp(22px, 6vw, 32px);
+  font-weight: 800;
+  color: #fff;
+}
+.fase-tile.bloq .ft-num { color: #777; }
+.ft-emo { font-size: clamp(22px, 6vw, 30px); line-height: 1; }
+.ft-lock { font-size: clamp(26px, 7vw, 36px); }
+.ft-foco {
+  font-size: clamp(12px, 3.2vw, 16px);
+  font-weight: 700;
+  color: #2ff7e6;
+}
+.ft-estrelas {
+  font-size: clamp(13px, 3.4vw, 17px);
+  color: #555566;
+  letter-spacing: 1px;
+}
+.ft-estrelas.on { color: #ffd23e; }
+.grade-boss {
+  background: #ff3030;
+  font-size: clamp(20px, 5.5vw, 28px);
+}
+
+/* ---------------- HERÓI (trocar avatar) ---------------- */
+#heroi-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.hero-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 3px solid var(--cor, #ff3ea5);
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.05s ease;
+}
+.hero-row:active { transform: scale(0.98); }
+.hero-row:focus-visible { outline: 3px solid #ffd23e; outline-offset: 2px; }
+.hero-row.atual { border-width: 5px; }
+.hero-av {
+  flex: 0 0 auto;
+  width: 76px;
+  height: 76px;
+  border-radius: 12px;
+}
+.hero-info {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.hero-info b { font-size: clamp(20px, 5.5vw, 28px); }
+.hero-info small { font-size: clamp(13px, 3.6vw, 17px); color: #ddd; }
+.hero-check {
+  flex: 0 0 auto;
+  font-size: 34px;
+  font-weight: 800;
+  color: #36d96b;
+}
+
+/* ---------------- PERFIS ---------------- */
+#perfis-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.perfil-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.perfil-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 18px;
+  border: 3px solid var(--cor, #ff3ea5);
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.05s ease;
+}
+.perfil-card:active { transform: scale(0.96); }
+.perfil-card:focus-visible { outline: 3px solid #ffd23e; outline-offset: 2px; }
+.perfil-card.atual { border-width: 5px; }
+.perfil-card.rem { border-color: #ff3030; }
+.pf-av { width: 96px; height: 96px; }
+.pf-nome {
+  font-size: clamp(18px, 5vw, 26px);
+  font-weight: 800;
+  color: #fff;
+}
+.pf-estr {
+  font-size: clamp(14px, 4vw, 19px);
+  font-weight: 700;
+  color: #ffd23e;
+}
+.pf-check, .pf-marca {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #36d96b;
+}
+.pf-novo { background: #36d96b; color: #0d0d12; }
+.pf-remover { background: #2a2a3a; }
+.pf-remover.on { background: #2ff7e6; color: #0d0d12; }
+.pf-label {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(16px, 4.5vw, 22px);
+  font-weight: 800;
+  color: #ffd23e;
+}
+.nome-input {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 64px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  border: 2px solid #2ff7e6;
+  background: #0d0d12;
+  color: #fff;
+  font-family: inherit;
+  font-size: clamp(22px, 6vw, 32px);
+  font-weight: 800;
+  text-align: center;
+}
+.nome-input::placeholder { color: #6a6a7e; font-weight: 600; }
+.nome-input:focus { outline: none; border-color: #ffd23e; }
+.nome-input.shake { animation: ui-shake 0.4s; }
+@keyframes ui-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.hero-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 6px;
+  border-radius: 16px;
+  border: 3px solid var(--cor, #ff3ea5);
+  background: rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: clamp(16px, 4.4vw, 22px);
+  -webkit-tap-highlight-color: transparent;
+}
+.hero-pick img { width: 84px; height: 84px; }
+.hero-pick.sel { border-width: 5px; box-shadow: 0 0 14px var(--cor); }
+.hero-pick:focus-visible { outline: 3px solid #ffd23e; outline-offset: 2px; }
+.pf-criar { background: #36d96b; color: #0d0d12; }
+
+/* ---------------- RESULTADO ---------------- */
+#resultado-corpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.res-stars, .res-coroa {
+  text-align: center;
+  font-size: 56px;
+  line-height: 1;
+}
+.res-star { color: #444455; }
+.res-star.on { color: #ffd23e; text-shadow: 0 0 12px rgba(255, 62, 165, 0.7); }
+.res-sub {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(20px, 5.2vw, 28px);
+  font-weight: 700;
+  color: #fff;
+}
+.res-painel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid rgba(47, 247, 230, 0.7);
+  border-radius: 18px;
+  padding: 14px 18px;
+}
+.res-painel div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.res-painel span { font-size: clamp(16px, 4.4vw, 22px); color: #ccc; }
+.res-painel b { font-size: clamp(18px, 4.8vw, 24px); color: #ffd23e; }
+.res-coins {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(22px, 6vw, 30px);
+  font-weight: 800;
+  color: #ffd23e;
+}
+.res-conq {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(16px, 4.4vw, 22px);
+  font-weight: 800;
+  color: #36d96b;
+}
+.res-fatos {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(16px, 4.4vw, 22px);
+  font-weight: 700;
+  color: #ffd23e;
+}
+.res-fatos.ok { color: #36d96b; }
+.res-fogo { text-align: center; font-size: 80px; line-height: 1; }
+.res-ofensiva {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(28px, 7.5vw, 40px);
+  font-weight: 800;
+  color: #ff8a3d;
+}
+.res-melhor {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(15px, 4vw, 20px);
+  color: #ccc;
+}
+.res-aviso {
+  margin: 0;
+  text-align: center;
+  font-size: clamp(15px, 4vw, 20px);
+  color: #9ad8ff;
+}
+.res-prox { background: #36d96b; color: #0d0d12; }
+.res-replay { background: #7b2ff7; }
+.res-fases { background: #ff3ea5; }
+
+/* ---------------- CONFIRMA ---------------- */
+.confirma-txt {
+  margin: 6px 0 4px;
+  text-align: center;
+  font-size: clamp(20px, 5.2vw, 28px);
+  font-weight: 700;
+  color: #fff;
+}
+.confirma-sim { background: #ff3030; }

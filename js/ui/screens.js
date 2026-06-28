@@ -1,38 +1,58 @@
 /**
- * UIScreens — camada de telas em HTML sobreposta ao canvas do Phaser.
+ * UIScreens — camada de navegação em HTML sobreposta ao canvas do Phaser.
  *
- * Migração das telas de menu (antes desenhadas no canvas, com hit-areas
- * frágeis e toque deslocado no Android) para HTML real: botões <button>
- * nativos, acessíveis, sem bugs de área de toque. O Phaser continua rodando
- * por baixo (sem troca de cena), então fechar o overlay volta direto para a
- * MenuScene que ficou viva.
+ * Toda a navegação (Menu, Perfis, Herói, Grade de fases, Ajustes, Conquistas,
+ * Progresso, Loja, Resultado) é HTML real — botões <button>/<input> nativos,
+ * acessíveis, sem os bugs de área de toque do canvas. O Phaser roda apenas o
+ * gameplay (GameScene/TrainScene); ao terminar, a cena devolve o controle para
+ * este overlay. A BootScene gera as texturas e chama UIScreens.irInicio().
  *
- * Telas: Ajustes, Conquistas, Progresso, Loja. Reaproveita Storage / AudioFX /
- * dados (HEROIS, CONQUISTAS, ROUPAS) — sem alterá-los.
+ * Reaproveita Storage, AudioFX, Util e os dados (HEROIS, FASES, CONQUISTAS,
+ * ROUPAS) — sem alterá-los.
  */
 const UIScreens = (() => {
-  // ----- helpers de DOM -----
+  // ----- estado -----
+  let dadosResultado = null;      // dados da última partida (tela de resultado)
+  let modoPerfil = "selecao";     // "selecao" | "criacao"
+  let removendoPerfil = false;
+  let novoHeroiId = 1;
+  let perfilParaRemover = null;
+
+  // ----- helpers -----
   function root() {
     return document.getElementById("ui-root");
   }
   function corHex(cor) {
     return "#" + cor.toString(16).padStart(6, "0");
   }
+  function esc(s) {
+    return String(s).replace(/[&<>"]/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])
+    );
+  }
   function arquivoAvatar(roupaId, heroId) {
     const r = typeof getRoupa === "function" ? getRoupa(roupaId) : null;
     if (r) return r.file;
     return getHeroi(heroId).file;
   }
+  function totalEstrelasDe(id) {
+    try {
+      const raw = localStorage.getItem(`idolmath.save.${id}`);
+      if (!raw) return 0;
+      const estrelas = (JSON.parse(raw) || {}).estrelas || {};
+      return Object.values(estrelas).reduce((s, n) => s + n, 0);
+    } catch (e) {
+      return 0;
+    }
+  }
 
   // ===================== AJUSTES =====================
-  // Espelha SettingsScene: mesmos itens e mesma lógica de alternância.
   const ITENS_AJUSTES = [
     { chave: "musica", emoji: "🎵", nome: "Música" },
     { chave: "efeitos", emoji: "🔊", nome: "Efeitos" },
     { chave: "timer", emoji: "⏱️", nome: "Cronômetro" },
     { chave: "voz", emoji: "🗣️", nome: "Ler em voz alta" },
   ];
-
   function pintarAjuste(chave) {
     const btn = document.querySelector(`#screen-ajustes [data-cfg="${chave}"]`);
     if (!btn) return;
@@ -49,18 +69,16 @@ const UIScreens = (() => {
     const atual = Storage.getConfig()[chave];
     Storage.setConfig(chave, !atual);
     if (chave === "musica") AudioFX.sincronizarMusica();
-    if (chave === "efeitos" && !atual) AudioFX.acerto(); // prévia ao ligar
+    if (chave === "efeitos" && !atual) AudioFX.acerto();
     pintarAjuste(chave);
   }
 
   // ===================== CONQUISTAS =====================
   function montarConquistas() {
     const desbloq = Storage.conquistasDesbloqueadas();
-    const total = CONQUISTAS.length;
     const feitas = CONQUISTAS.filter((c) => desbloq[c.id]).length;
     const cont = document.getElementById("conq-contagem");
-    if (cont) cont.textContent = `🏅 ${feitas}/${total}`;
-
+    if (cont) cont.textContent = `🏅 ${feitas}/${CONQUISTAS.length}`;
     const lista = document.getElementById("conq-lista");
     if (!lista) return;
     lista.innerHTML = CONQUISTAS.map((c) => {
@@ -68,7 +86,7 @@ const UIScreens = (() => {
       return `
         <div class="conq-row ${feito ? "done" : "locked"}">
           <span class="conq-ico">${feito ? c.icone : "🔒"}</span>
-          <span class="conq-txt"><b>${c.nome}</b><small>${c.desc}</small></span>
+          <span class="conq-txt"><b>${esc(c.nome)}</b><small>${esc(c.desc)}</small></span>
           <span class="conq-pre">🪙 ${c.recompensa}</span>
         </div>`;
     }).join("");
@@ -76,7 +94,6 @@ const UIScreens = (() => {
 
   // ===================== PROGRESSO =====================
   let treinoFracas = [];
-
   function formatarTempo(ms) {
     const min = Math.floor(ms / 60000);
     if (min >= 60) return `${Math.floor(min / 60)}h${String(min % 60).padStart(2, "0")}`;
@@ -87,23 +104,18 @@ const UIScreens = (() => {
     if (max <= 0 || peso <= 0) return "verde";
     return peso / max <= 0.5 ? "amarelo" : "vermelho";
   }
-
   function montarProgresso() {
     const meta = Storage.perfilAtual();
     const nome = document.getElementById("prog-nome");
-    if (nome) nome.textContent = meta ? `👤 ${meta.nome}` : "";
-
+    if (nome) nome.textContent = meta ? `👤 ${esc(meta.nome)}` : "";
     const corpo = document.getElementById("prog-corpo");
     if (!corpo) return;
     const est = Storage.estatisticas();
-
     if (est.total === 0) {
-      corpo.innerHTML =
-        `<p class="prog-vazio">Ainda sem dados.<br>Jogue uma partida ou o Treino! 🎮</p>`;
+      corpo.innerHTML = `<p class="prog-vazio">Ainda sem dados.<br>Jogue uma partida ou o Treino! 🎮</p>`;
       treinoFracas = [];
       return;
     }
-
     const prec = est.precisao === null ? "—" : `${est.precisao}%`;
     const nums = `
       <div class="prog-nums">
@@ -111,29 +123,19 @@ const UIScreens = (() => {
         <div class="prog-num"><span class="pn-ico">⏱️</span><b>${formatarTempo(est.tempoMs)}</b><small>tempo</small></div>
         <div class="prog-num"><span class="pn-ico">⭐</span><b>${est.totalEstrelas}/${FASES.length * 3}</b><small>Fase ${est.faseMax}</small></div>
       </div>`;
-
     let heat = "";
     for (let t = 1; t <= 10; t++) {
-      const cls = classeFraqueza(est.fraquezaTabuadas[t], est.maxFraqueza);
-      heat += `<span class="heat-cell ${cls}">${t}</span>`;
+      heat += `<span class="heat-cell ${classeFraqueza(est.fraquezaTabuadas[t], est.maxFraqueza)}">${t}</span>`;
     }
-    const mapa = `
-      <p class="prog-legenda">Tabuadas — 🟥 treinar mais · 🟩 dominada</p>
-      <div class="prog-heat">${heat}</div>`;
-
-    let fracosHtml = "";
-    if (est.fatosFracos.length) {
-      fracosHtml = `<p class="prog-focar">📚 Focar: ${est.fatosFracos.join("   ")}</p>`;
-    }
-
+    const mapa = `<p class="prog-legenda">Tabuadas — 🟥 treinar mais · 🟩 dominada</p><div class="prog-heat">${heat}</div>`;
+    const fracosHtml = est.fatosFracos.length
+      ? `<p class="prog-focar">📚 Focar: ${est.fatosFracos.join("   ")}</p>` : "";
     const tabs = [];
     for (let t = 1; t <= 10; t++) tabs.push({ t, w: est.fraquezaTabuadas[t] });
     tabs.sort((a, b) => b.w - a.w);
     treinoFracas = tabs.filter((x) => x.w > 0).slice(0, 3).map((x) => x.t);
     const treinoBtn = treinoFracas.length
-      ? `<button class="ui-btn prog-treino" type="button" data-acao="treino">🎯 Treinar ${treinoFracas.join(", ")}</button>`
-      : "";
-
+      ? `<button class="ui-btn prog-treino" type="button" data-acao="treino-fracas">🎯 Treinar ${treinoFracas.join(", ")}</button>` : "";
     corpo.innerHTML = nums + mapa + fracosHtml + treinoBtn;
   }
 
@@ -142,59 +144,43 @@ const UIScreens = (() => {
     const m = document.getElementById("loja-msg");
     if (m) m.textContent = txt;
   }
-
   function montarLoja() {
     const heroId = Storage.getHeroiId();
     const heroi = getHeroi(heroId);
     const equipada = Storage.roupaEquipada(heroId);
     const cor = corHex(heroi.cor);
-
     const saldo = document.getElementById("loja-saldo");
     if (saldo) saldo.textContent = `🪙 ${Storage.getMoedas()} moedas`;
     mostrarMsgLoja("");
-
     const corpo = document.getElementById("loja-corpo");
     if (!corpo) return;
-
-    const roupas = roupasDoHeroi(heroId);
-    const cards = roupas
-      .map((r) => {
-        const possui = Storage.possuiRoupa(r.id);
-        const eq = r.id === equipada;
-        let estado, cls;
-        if (eq) {
-          estado = "✓ Equipada";
-          cls = "equipada";
-        } else if (possui) {
-          estado = "Equipar";
-          cls = "possui";
-        } else {
-          estado = `🪙 ${r.preco}`;
-          cls = "comprar";
-        }
-        return `
-          <button class="roupa-card ${cls}" type="button" data-roupa="${r.id}" style="--cor:${cor}">
-            <img class="roupa-img" src="assets/herois/${r.file}.svg" alt="${r.nome}" loading="lazy">
-            <span class="roupa-nome">${r.nome}</span>
-            <span class="roupa-estado">${estado}</span>
-          </button>`;
-      })
-      .join("");
-
+    const cards = roupasDoHeroi(heroId).map((r) => {
+      const possui = Storage.possuiRoupa(r.id);
+      const eq = r.id === equipada;
+      let estado, cls;
+      if (eq) { estado = "✓ Equipada"; cls = "equipada"; }
+      else if (possui) { estado = "Equipar"; cls = "possui"; }
+      else { estado = `🪙 ${r.preco}`; cls = "comprar"; }
+      return `
+        <button class="roupa-card ${cls}" type="button" data-roupa="${r.id}" style="--cor:${cor}">
+          <img class="roupa-img" src="assets/herois/${r.file}.svg" alt="${esc(r.nome)}" loading="lazy">
+          <span class="roupa-nome">${esc(r.nome)}</span>
+          <span class="roupa-estado">${estado}</span>
+        </button>`;
+    }).join("");
     corpo.innerHTML = `
       <div class="loja-preview" style="--cor:${cor}">
-        <img src="assets/herois/${arquivoAvatar(equipada, heroId)}.svg" alt="${heroi.nome}">
+        <img src="assets/herois/${arquivoAvatar(equipada, heroId)}.svg" alt="${esc(heroi.nome)}">
       </div>
-      <p class="loja-hero" style="color:${cor}">${heroi.nome}</p>
+      <p class="loja-hero" style="color:${cor}">${esc(heroi.nome)}</p>
       <div class="loja-grid">${cards}</div>
-      <p class="loja-dica">Troque de personagem no 🔄 Trocar → avatar</p>`;
+      <p class="loja-dica">Troque de personagem no 🔄 → avatar</p>`;
   }
-
   function escolherRoupa(roupaId) {
     const heroId = Storage.getHeroiId();
     const roupa = typeof getRoupa === "function" ? getRoupa(roupaId) : null;
     if (!roupa) return;
-    if (roupa.id === Storage.roupaEquipada(heroId)) return; // já equipada
+    if (roupa.id === Storage.roupaEquipada(heroId)) return;
     if (Storage.possuiRoupa(roupa.id)) {
       Storage.equiparRoupa(heroId, roupa.id);
       AudioFX.acerto();
@@ -206,55 +192,384 @@ const UIScreens = (() => {
       mostrarMsgLoja("Moedas insuficientes! Jogue mais pra ganhar. 🎮");
       return;
     }
-    montarLoja(); // redesenha com o novo estado
+    montarLoja();
   }
 
-  // ----- ponte com o Phaser: ir para o Treino dos pontos fracos -----
-  // Usa scene.start direto (não Util.trocarCena): o fade-out por evento de
-  // câmera não dispara de forma confiável quando acionado de fora da cena.
-  // A TrainScene faz o próprio fade-in no create(), então a transição segue suave.
-  function irParaTreino() {
-    const g = window.game;
-    const ms = g && g.scene.getScene("MenuScene");
-    api.fechar();
-    if (ms && ms.scene.isActive()) {
-      AudioFX.unlock();
-      ms.scene.start("TrainScene", {
-        tabuadas: treinoFracas,
-        titulo: `Pontos fracos: ${treinoFracas.join(", ")}`,
-      });
+  // ===================== MENU =====================
+  function montarMenu() {
+    AudioFX.sincronizarMusica();
+    const meta = Storage.perfilAtual();
+    const heroId = meta ? meta.heroiId : Storage.getHeroiId();
+    const faseMax = Storage.faseMax();
+    const ofensiva = Storage.ofensivaAtual();
+    const feito = Storage.desafioFeitoHoje();
+    const avatarFile = arquivoAvatar(Storage.roupaEquipada(heroId), heroId);
+    const corpo = document.getElementById("menu-corpo");
+    if (!corpo) return;
+    corpo.innerHTML = `
+      <div class="menu-header">
+        <button class="menu-avatar" type="button" data-acao="heroi" title="Trocar avatar">
+          <img src="assets/herois/${avatarFile}.svg" alt="avatar">
+        </button>
+        <div class="menu-id">
+          <span class="menu-nome">${meta ? esc(meta.nome) : ""}</span>
+          <span class="menu-saldo">🪙 ${Storage.getMoedas()}${ofensiva > 0 ? `   🔥 ${ofensiva}` : ""}</span>
+        </div>
+        <button class="ui-btn menu-trocar" type="button" data-acao="perfis" title="Trocar jogador">🔄</button>
+      </div>
+      <button class="ui-btn menu-jogar" type="button" data-acao="jogar">▶  JOGAR</button>
+      ${faseMax > 1 ? `<button class="ui-btn menu-continuar" type="button" data-acao="continuar">↪  Continuar (Fase ${faseMax})</button>` : ""}
+      <div class="menu-grid3">
+        <button class="ui-btn mg-rosa" type="button" data-acao="treino">📚 Treino</button>
+        <button class="ui-btn mg-verde" type="button" data-acao="progresso">📊 Progresso</button>
+        <button class="ui-btn mg-cinza" type="button" data-acao="ajustes">⚙️ Ajustes</button>
+      </div>
+      <div class="menu-grid3">
+        <button class="ui-btn ${feito ? "mg-cinza" : "mg-laranja"}" type="button" data-acao="desafio">${feito ? "🗓️ Desafio ✓" : "🗓️ Desafio"}</button>
+        <button class="ui-btn mg-ouro" type="button" data-acao="conquistas">🏅 Conquistas</button>
+        <button class="ui-btn mg-rosa" type="button" data-acao="loja">🛍️ Loja</button>
+      </div>
+      <p class="menu-stats">🗺️ ${FASES.length} fases  ·  ⭐ ${Storage.totalEstrelas()}/${FASES.length * 3}  ·  🏆 ${Storage.get().melhorPontuacao}</p>`;
+  }
+
+  // ===================== GRADE DE FASES =====================
+  function rotuloFoco(fase) {
+    const t = fase.tabuadas;
+    if (t.length >= 10) return "Mix";
+    if (t.length === 1) return `Tab. ${t[0]}`;
+    return `Tab. ${t[0]}–${t[t.length - 1]}`;
+  }
+  function montarGrade() {
+    const faseMax = Storage.faseMax();
+    const sub = document.getElementById("grade-sub");
+    if (sub) sub.textContent = `Cada fase treina uma tabuada  ·  ⭐ ${Storage.totalEstrelas()}`;
+    const tiles = FASES.map((f) => {
+      const desbloqueada = f.id <= faseMax;
+      if (!desbloqueada) {
+        return `<div class="fase-tile bloq"><span class="ft-num">${f.id}</span><span class="ft-lock">🔒</span></div>`;
+      }
+      const e = Storage.getEstrelas(f.id);
+      const estr = "★".repeat(e) + "☆".repeat(3 - e);
+      return `
+        <button class="fase-tile" type="button" data-fase="${f.id}" style="--cor:${corHex(f.corTema)}">
+          <span class="ft-num">${f.id}</span>
+          <span class="ft-emo">${f.boss.emoji}</span>
+          <span class="ft-foco">${rotuloFoco(f)}</span>
+          <span class="ft-estrelas ${e ? "on" : ""}">${estr}</span>
+        </button>`;
+    }).join("");
+    const corpo = document.getElementById("grade-corpo");
+    if (!corpo) return;
+    const bossRush = Storage.bossRushDesbloqueado()
+      ? `<button class="ui-btn grade-boss" type="button" data-acao="bossrush">💀  BOSS RUSH</button>` : "";
+    corpo.innerHTML = `<div class="grade-tiles">${tiles}</div>${bossRush}`;
+  }
+
+  // ===================== HERÓI (trocar avatar) =====================
+  function montarHeroi() {
+    const sel = Storage.getHeroiId();
+    const corpo = document.getElementById("heroi-corpo");
+    if (!corpo) return;
+    corpo.innerHTML = HEROIS.map((h) => {
+      const file = arquivoAvatar(Storage.roupaEquipada(h.id), h.id);
+      const cor = corHex(h.cor);
+      const atual = h.id === sel;
+      return `
+        <button class="hero-row ${atual ? "atual" : ""}" type="button" data-heroi="${h.id}" style="--cor:${cor}">
+          <img class="hero-av" src="assets/herois/${file}.svg" alt="${esc(h.nome)}">
+          <span class="hero-info"><b style="color:${cor}">${esc(h.nome)}</b><small>${esc(h.descricao)}</small></span>
+          ${atual ? '<span class="hero-check">✓</span>' : ""}
+        </button>`;
+    }).join("");
+  }
+
+  // ===================== PERFIS =====================
+  function montarPerfis() {
+    const titulo = document.getElementById("perfis-titulo");
+    if (modoPerfil === "criacao" || Storage.listarPerfis().length === 0) {
+      if (titulo) titulo.textContent = "NOVO JOGADOR";
+      montarPerfisCriacao();
+    } else {
+      if (titulo) titulo.textContent = "QUEM VAI JOGAR?";
+      montarPerfisSelecao();
     }
+  }
+  function montarPerfisSelecao() {
+    const corpo = document.getElementById("perfis-corpo");
+    if (!corpo) return;
+    const perfis = Storage.listarPerfis();
+    const atualId = Storage.perfilAtual() && Storage.perfilAtual().id;
+    const cards = perfis.map((meta) => {
+      const h = getHeroi(meta.heroiId);
+      const marca = removendoPerfil ? '<span class="pf-marca">🗑️</span>'
+        : meta.id === atualId ? '<span class="pf-check">✓</span>' : "";
+      return `
+        <button class="perfil-card ${removendoPerfil ? "rem" : ""} ${meta.id === atualId ? "atual" : ""}" type="button" data-perfil="${meta.id}" style="--cor:${corHex(h.cor)}">
+          <img class="pf-av" src="assets/herois/${h.file}.svg" alt="${esc(meta.nome)}">
+          <span class="pf-nome">${esc(meta.nome)}</span>
+          <span class="pf-estr">⭐ ${totalEstrelasDe(meta.id)}</span>
+          ${marca}
+        </button>`;
+    }).join("");
+    const podeNovo = !Storage.perfilCheio() && !removendoPerfil;
+    const podeMenu = Storage.temPerfilAtual() && !removendoPerfil;
+    corpo.innerHTML = `
+      ${removendoPerfil ? '<p class="ui-msg">Toque num jogador para remover</p>' : ""}
+      <div class="perfil-grid">${cards}</div>
+      ${podeNovo ? '<button class="ui-btn pf-novo" type="button" data-acao="novo-jogador">➕  Novo jogador</button>' : ""}
+      ${perfis.length ? `<button class="ui-btn pf-remover ${removendoPerfil ? "on" : ""}" type="button" data-acao="remover-toggle">${removendoPerfil ? "✓  Concluir" : "🗑️  Remover"}</button>` : ""}
+      ${podeMenu ? '<button class="ui-btn ui-voltar" type="button" data-acao="menu">↩  Menu</button>' : ""}`;
+  }
+  function montarPerfisCriacao() {
+    const corpo = document.getElementById("perfis-corpo");
+    if (!corpo) return;
+    const temPerfis = Storage.listarPerfis().length > 0;
+    const heroCards = HEROIS.map((h) =>
+      `<button class="hero-pick ${h.id === novoHeroiId ? "sel" : ""}" type="button" data-novoheroi="${h.id}" style="--cor:${corHex(h.cor)}">
+        <img src="assets/herois/${h.file}.svg" alt="${esc(h.nome)}">
+        <span style="color:${corHex(h.cor)}">${esc(h.nome)}</span>
+      </button>`).join("");
+    corpo.innerHTML = `
+      <label class="pf-label" for="nome-input">Seu nome:</label>
+      <input id="nome-input" class="nome-input" type="text" maxlength="12" placeholder="Digite seu nome" autocomplete="off" autocapitalize="words">
+      <p class="pf-label">Escolha seu personagem:</p>
+      <div class="hero-grid">${heroCards}</div>
+      <button class="ui-btn pf-criar" type="button" data-acao="criar-perfil">✨  Criar jogador</button>
+      <button class="ui-btn ui-voltar" type="button" data-acao="perfis-voltar">↩  ${temPerfis ? "Voltar" : "Menu"}</button>`;
+  }
+  function marcarHeroPick() {
+    document.querySelectorAll("#perfis-corpo .hero-pick").forEach((b) => {
+      b.classList.toggle("sel", +b.dataset.novoheroi === novoHeroiId);
+    });
+  }
+  function tocarPerfil(id) {
+    if (removendoPerfil) {
+      perfilParaRemover = Storage.listarPerfis().find((p) => p.id === id) || null;
+      api.abrir("confirma");
+      return;
+    }
+    AudioFX.acerto();
+    Storage.selecionarPerfil(id);
+    api.abrir("menu");
+  }
+  function criarPerfil() {
+    const input = document.getElementById("nome-input");
+    const nome = ((input && input.value) || "").trim();
+    if (!nome) {
+      if (input) {
+        input.focus();
+        input.classList.add("shake");
+        setTimeout(() => input.classList.remove("shake"), 400);
+      }
+      return;
+    }
+    AudioFX.acerto();
+    Storage.criarPerfil(nome, novoHeroiId);
+    modoPerfil = "selecao";
+    api.abrir("menu");
+  }
+  function perfisVoltar() {
+    if (Storage.listarPerfis().length > 0) {
+      modoPerfil = "selecao";
+      api.abrir("perfis");
+    } else if (Storage.temPerfilAtual()) {
+      api.abrir("menu");
+    } else {
+      modoPerfil = "criacao";
+      api.abrir("perfis");
+    }
+  }
+
+  // ===================== CONFIRMA (remover perfil) =====================
+  function montarConfirma() {
+    const corpo = document.getElementById("confirma-corpo");
+    if (!corpo) return;
+    const nome = perfilParaRemover ? perfilParaRemover.nome : "";
+    corpo.innerHTML = `
+      <p class="confirma-txt">Apagar "${esc(nome)}" e todo o progresso deste jogador?</p>
+      <button class="ui-btn confirma-sim" type="button" data-acao="apagar-perfil">🗑️  Apagar</button>
+      <button class="ui-btn ui-voltar" type="button" data-acao="cancelar-apagar">Cancelar</button>`;
+  }
+  function apagarPerfil() {
+    if (perfilParaRemover) {
+      AudioFX.erro();
+      Storage.removerPerfil(perfilParaRemover.id);
+    }
+    perfilParaRemover = null;
+    if (Storage.listarPerfis().length === 0) {
+      modoPerfil = "criacao";
+      removendoPerfil = false;
+    } else {
+      modoPerfil = "selecao";
+    }
+    api.abrir("perfis");
+  }
+
+  // ===================== RESULTADO =====================
+  function estrelasHtml(n) {
+    let s = "";
+    for (let i = 0; i < 3; i++) s += `<span class="res-star ${i < n ? "on" : ""}">★</span>`;
+    return s;
+  }
+  function montarResultado() {
+    const d = dadosResultado || {};
+    const titulo = document.getElementById("resultado-titulo");
+    const corpo = document.getElementById("resultado-corpo");
+    if (!corpo) return;
+    if (d.diario) return montarResultadoDiario(d, titulo, corpo);
+    const venceu = d.venceu;
+    if (titulo) {
+      titulo.textContent = venceu ? "🏆 VITÓRIA!" : "FIM DE SHOW";
+      titulo.style.color = venceu ? "#ffd23e" : "#ff3ea5";
+    }
+    const fase = getFase(d.faseId);
+    const sub = d.bossRush
+      ? (venceu ? "Você sobreviveu ao Boss Rush!" : "O Boss Rush te derrubou...")
+      : (venceu ? `Você derrotou ${esc(fase.boss.nome)}!` : "A plateia ficou no escuro...");
+    const total = d.acertos + d.erros;
+    const precisao = total ? Math.round((d.acertos / total) * 100) : 100;
+    const fatos = [...new Set(d.errosFatos || [])].slice(0, 6);
+    const fatosTxt = fatos.length ? `📚 Treine: ${fatos.join("   ")}` : "🎉 Mandou bem! Nenhum erro.";
+    corpo.innerHTML = `
+      ${d.bossRush && venceu ? '<div class="res-coroa">👑🏆👑</div>' : `<div class="res-stars">${estrelasHtml(d.estrelas || 0)}</div>`}
+      <p class="res-sub">${sub}</p>
+      <div class="res-painel">
+        <div><span>Pontuação</span><b>${d.pontuacao}</b></div>
+        <div><span>Precisão</span><b>${precisao}%  (${d.acertos}/${total})</b></div>
+        <div><span>Combo máximo</span><b>x${d.maxCombo}</b></div>
+        <div><span>Recorde</span><b>${Storage.get().melhorPontuacao}</b></div>
+      </div>
+      ${d.moedasGanhas ? `<p class="res-coins">🪙 +${d.moedasGanhas} moedas</p>` : ""}
+      ${d.novasConquistas && d.novasConquistas.length ? `<p class="res-conq">🏅 Nova conquista!  ${d.novasConquistas.map((c) => esc(c.icone + " " + c.nome)).join("   ")}</p>` : ""}
+      <p class="res-fatos ${fatos.length ? "" : "ok"}">${fatosTxt}</p>
+      ${venceu && d.temProxima
+        ? '<button class="ui-btn res-prox" type="button" data-acao="result-proxima">▶  Próxima Fase</button>'
+        : `<button class="ui-btn res-replay" type="button" data-acao="result-replay">↻  ${venceu ? "Jogar de novo" : "Tentar de novo"}</button>`}
+      <button class="ui-btn res-fases" type="button" data-acao="result-fases">🗺  Fases</button>
+      <button class="ui-btn ui-voltar" type="button" data-acao="menu">🏠  Menu</button>`;
+  }
+  function montarResultadoDiario(d, titulo, corpo) {
+    const venceu = d.venceu;
+    if (titulo) {
+      titulo.textContent = venceu ? "🔥 DESAFIO!" : "QUASE!";
+      titulo.style.color = venceu ? "#ffd23e" : "#ff3ea5";
+    }
+    const total = d.acertos + d.erros;
+    const precisao = total ? Math.round((d.acertos / total) * 100) : 100;
+    const frase = d.ofensiva === 1 ? "1 dia seguido" : `${d.ofensiva} dias seguidos`;
+    const aviso = !venceu
+      ? "Você não completou o desafio — tente de novo! 💪"
+      : d.jaFeito
+      ? "Você já fez o desafio de hoje — volte amanhã pra manter a ofensiva! 😉"
+      : "Volte amanhã pra aumentar a ofensiva! 🔥";
+    corpo.innerHTML = `
+      <div class="res-fogo">${venceu ? "🔥" : "💪"}</div>
+      <p class="res-ofensiva">${venceu ? frase : `Ofensiva: ${d.ofensiva}`}</p>
+      <p class="res-melhor">Melhor ofensiva: ${d.melhorOfensiva}</p>
+      <div class="res-painel">
+        <div><span>Pontuação</span><b>${d.pontuacao}</b></div>
+        <div><span>Precisão</span><b>${precisao}%  (${d.acertos}/${total})</b></div>
+        <div><span>Combo máximo</span><b>x${d.maxCombo}</b></div>
+      </div>
+      ${d.moedasGanhas ? `<p class="res-coins">🪙 +${d.moedasGanhas} moedas</p>` : ""}
+      <p class="res-aviso">${aviso}</p>
+      ${d.novasConquistas && d.novasConquistas.length ? `<p class="res-conq">🏅 Nova conquista!  ${d.novasConquistas.map((c) => esc(c.icone + " " + c.nome)).join("   ")}</p>` : ""}
+      <button class="ui-btn res-replay" type="button" data-acao="result-diario-replay">↻  Jogar de novo</button>
+      <button class="ui-btn ui-voltar" type="button" data-acao="menu">🏠  Menu</button>`;
+  }
+
+  // ----- ponte com o Phaser: iniciar uma cena de gameplay -----
+  function iniciarJogo(key, data) {
+    api.fechar();
+    const g = window.game;
+    if (!g) return;
+    g.scene.getScenes(true).forEach((s) => {
+      if (s.scene.key !== "BootScene") g.scene.stop(s.scene.key);
+    });
+    g.scene.start(key, data || {});
   }
 
   // ----- builders por tela -----
   const BUILDERS = {
+    menu: montarMenu,
+    grade: montarGrade,
+    perfis: montarPerfis,
+    heroi: montarHeroi,
     ajustes: montarAjustes,
     conquistas: montarConquistas,
     progresso: montarProgresso,
     loja: montarLoja,
+    resultado: montarResultado,
+    confirma: montarConfirma,
   };
+
+  // ----- roteador de cliques -----
+  function rotear(acao) {
+    switch (acao) {
+      case "menu": case "voltar": return api.abrir("menu");
+      case "jogar": case "grade": case "result-fases": return api.abrir("grade");
+      case "progresso": return api.abrir("progresso");
+      case "conquistas": return api.abrir("conquistas");
+      case "loja": return api.abrir("loja");
+      case "ajustes": return api.abrir("ajustes");
+      case "heroi": return api.abrir("heroi");
+      case "perfis":
+        modoPerfil = "selecao"; removendoPerfil = false; return api.abrir("perfis");
+      case "treino": return iniciarJogo("TrainScene", {});
+      case "treino-fracas":
+        return iniciarJogo("TrainScene", { tabuadas: treinoFracas, titulo: `Pontos fracos: ${treinoFracas.join(", ")}` });
+      case "continuar":
+        return iniciarJogo("GameScene", { faseId: Storage.faseMax(), heroId: Storage.getHeroiId() });
+      case "desafio":
+        return iniciarJogo("GameScene", { diario: true, heroId: Storage.getHeroiId() });
+      case "bossrush":
+        return iniciarJogo("GameScene", { bossRush: true, heroId: Storage.getHeroiId() });
+      case "novo-jogador":
+        modoPerfil = "criacao"; novoHeroiId = novoHeroiId || 1; return montarPerfis();
+      case "remover-toggle":
+        removendoPerfil = !removendoPerfil; return montarPerfis();
+      case "criar-perfil": return criarPerfil();
+      case "perfis-voltar": return perfisVoltar();
+      case "apagar-perfil": return apagarPerfil();
+      case "cancelar-apagar":
+        modoPerfil = "selecao"; return api.abrir("perfis");
+      case "result-proxima":
+        return iniciarJogo("GameScene", { faseId: dadosResultado.faseId + 1, heroId: dadosResultado.heroId });
+      case "result-replay":
+        return iniciarJogo("GameScene", { faseId: dadosResultado.faseId, heroId: dadosResultado.heroId, bossRush: dadosResultado.bossRush });
+      case "result-diario-replay":
+        return iniciarJogo("GameScene", { diario: true, heroId: dadosResultado.heroId });
+    }
+  }
 
   const api = {
     /** mostra o overlay com a tela indicada (esconde as demais) */
-    abrir(nome) {
+    abrir(nome, dados) {
       const r = root();
       if (!r) return;
+      if (nome === "resultado" && dados) dadosResultado = dados;
       r.querySelectorAll(".ui-screen").forEach((sec) => {
         sec.hidden = sec.id !== `screen-${nome}`;
       });
       if (BUILDERS[nome]) BUILDERS[nome]();
       r.hidden = false;
-      // garante o topo da tela rolável e foca o 1º botão (acessibilidade)
       const card = r.querySelector(`#screen-${nome} .ui-card`);
       if (card) card.scrollTop = 0;
-      const primeiro = r.querySelector(`#screen-${nome} button`);
-      if (primeiro) primeiro.focus();
+      const input = r.querySelector(`#screen-${nome} input`);
+      const primeiro = input || r.querySelector(`#screen-${nome} button`);
+      if (primeiro) primeiro.focus({ preventScroll: true });
     },
 
-    /** esconde o overlay — volta para a cena do Phaser que está viva por baixo */
+    /** esconde o overlay (usado ao entrar no gameplay) */
     fechar() {
       const r = root();
       if (r) r.hidden = true;
+    },
+
+    /** ponto de entrada após o Boot: menu (com perfil) ou seleção/criação */
+    irInicio() {
+      modoPerfil = "selecao";
+      api.abrir(Storage.temPerfilAtual() ? "menu" : "perfis");
     },
 
     /** liga o listener delegado de cliques do overlay */
@@ -262,18 +577,27 @@ const UIScreens = (() => {
       const r = root();
       if (!r) return;
       r.addEventListener("click", (ev) => {
-        const alvo = ev.target.closest("[data-cfg], [data-roupa], [data-acao]");
+        const alvo = ev.target.closest(
+          "[data-cfg],[data-roupa],[data-fase],[data-heroi],[data-perfil],[data-novoheroi],[data-acao]"
+        );
         if (!alvo || !r.contains(alvo)) return;
-        if (alvo.dataset.cfg) {
-          alternarAjuste(alvo.dataset.cfg);
-        } else if (alvo.dataset.roupa) {
-          AudioFX.unlock();
-          escolherRoupa(alvo.dataset.roupa);
-        } else if (alvo.dataset.acao === "treino") {
-          irParaTreino();
-        } else if (alvo.dataset.acao === "voltar") {
-          api.fechar();
+        AudioFX.unlock();
+        if (alvo.dataset.cfg) return alternarAjuste(alvo.dataset.cfg);
+        if (alvo.dataset.roupa) return escolherRoupa(alvo.dataset.roupa);
+        if (alvo.dataset.fase)
+          return iniciarJogo("GameScene", { faseId: +alvo.dataset.fase, heroId: Storage.getHeroiId() });
+        if (alvo.dataset.heroi) {
+          AudioFX.acerto();
+          Storage.setHeroi(+alvo.dataset.heroi);
+          return api.abrir("menu");
         }
+        if (alvo.dataset.perfil) return tocarPerfil(+alvo.dataset.perfil);
+        if (alvo.dataset.novoheroi) {
+          AudioFX.acerto();
+          novoHeroiId = +alvo.dataset.novoheroi;
+          return marcarHeroPick();
+        }
+        if (alvo.dataset.acao) return rotear(alvo.dataset.acao);
       });
     },
   };

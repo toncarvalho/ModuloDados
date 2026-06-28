@@ -548,7 +548,10 @@ class GameScene extends Phaser.Scene {
         cor: 0xff3ea5,
         w: 460,
         h: 110,
-        onClick: () => Util.trocarCena(this, "StageScene", { heroId: this.heroi.id }),
+        onClick: () => {
+          UIScreens.abrir("grade");
+          this.scene.stop();
+        },
       })
     );
     this.overlayPausa.add(
@@ -556,7 +559,10 @@ class GameScene extends Phaser.Scene {
         cor: 0x444455,
         w: 460,
         h: 110,
-        onClick: () => Util.trocarCena(this, "MenuScene"),
+        onClick: () => {
+          UIScreens.abrir("menu");
+          this.scene.stop();
+        },
       })
     );
   }
@@ -600,8 +606,8 @@ class GameScene extends Phaser.Scene {
         venceu: true,
       });
       const novasConquistas = Storage.avaliarConquistas({ venceu: true });
-      this.time.delayedCall(700, () =>
-        this.scene.start("ResultScene", {
+      this.time.delayedCall(700, () => {
+        UIScreens.abrir("resultado", {
           venceu: true,
           diario: true,
           jaFeito: res.ja,
@@ -618,8 +624,9 @@ class GameScene extends Phaser.Scene {
           temProxima: false,
           moedasGanhas: moedas,
           novasConquistas,
-        })
-      );
+        });
+        this.scene.stop();
+      });
       return;
     }
 
@@ -645,8 +652,8 @@ class GameScene extends Phaser.Scene {
     });
     const novasConquistas = Storage.avaliarConquistas({ venceu: true, faseId: this.fase.id });
 
-    this.time.delayedCall(700, () =>
-      this.scene.start("ResultScene", {
+    this.time.delayedCall(700, () => {
+      UIScreens.abrir("resultado", {
         venceu: true,
         bossRush: this.bossRush,
         pontuacao: this.pontuacao,
@@ -660,8 +667,9 @@ class GameScene extends Phaser.Scene {
         temProxima,
         moedasGanhas: moedas,
         novasConquistas,
-      })
-    );
+      });
+      this.scene.stop();
+    });
   }
 
   derrota() {
@@ -691,8 +699,8 @@ class GameScene extends Phaser.Scene {
         }
       : {};
 
-    this.time.delayedCall(700, () =>
-      this.scene.start("ResultScene", {
+    this.time.delayedCall(700, () => {
+      UIScreens.abrir("resultado", {
         venceu: false,
         bossRush: this.bossRush,
         pontuacao: this.pontuacao,
@@ -707,7 +715,8 @@ class GameScene extends Phaser.Scene {
         moedasGanhas: this.moedasPartida,
         novasConquistas,
         ...extra,
-      })
-    );
+      });
+      this.scene.stop();
+    });
   }
 }
