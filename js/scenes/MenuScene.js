@@ -85,7 +85,10 @@ class MenuScene extends Phaser.Scene {
       w: 224,
       h: 100,
       tamFonte: 28,
-      onClick: () => Util.trocarCena(this, "ProgressScene"),
+      onClick: () => {
+        AudioFX.unlock();
+        UIScreens.abrir("progresso");
+      },
     });
     UI.botao(this, cx + 240, y, "⚙️ Ajustes", {
       cor: 0x2a2a3a,
@@ -120,14 +123,20 @@ class MenuScene extends Phaser.Scene {
       w: 224,
       h: 96,
       tamFonte: 25,
-      onClick: () => Util.trocarCena(this, "ConquistasScene"),
+      onClick: () => {
+        AudioFX.unlock();
+        UIScreens.abrir("conquistas");
+      },
     });
     UI.botao(this, cx + 240, y, "🛍️ Loja", {
       cor: 0xff3ea5,
       w: 224,
       h: 96,
       tamFonte: 28,
-      onClick: () => Util.trocarCena(this, "LojaScene"),
+      onClick: () => {
+        AudioFX.unlock();
+        UIScreens.abrir("loja");
+      },
     });
     y += 128;
 
