@@ -591,7 +591,8 @@ const UIScreens = (() => {
           Storage.setHeroi(+alvo.dataset.heroi);
           return api.abrir("menu");
         }
-        if (alvo.dataset.perfil) return tocarPerfil(+alvo.dataset.perfil);
+        // id de perfil é string ("p..."); NÃO coagir com + (viraria NaN).
+        if (alvo.dataset.perfil) return tocarPerfil(alvo.dataset.perfil);
         if (alvo.dataset.novoheroi) {
           AudioFX.acerto();
           novoHeroiId = +alvo.dataset.novoheroi;
