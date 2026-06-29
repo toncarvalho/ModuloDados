@@ -54,6 +54,9 @@ function ok(cond, msg) {
   const S = loadStorage(ls);
   const meta = S.criarPerfil("Ana", 3);
   ok(!!meta && meta.nome === "Ana", "criarPerfil retorna meta com nome");
+  // id de perfil é string — a UI (data-perfil) depende disso; não pode ser
+  // coagido com + (viraria NaN e a troca de jogador falha).
+  ok(typeof meta.id === "string", "id de perfil é string");
   ok(S.perfilAtual().nome === "Ana", "perfil atual é Ana");
   ok(S.getHeroiId() === 3, "heroiId do perfil = 3");
   ok(ls.has(`idolmath.save.${meta.id}`), "save do perfil foi criado");
