@@ -103,6 +103,34 @@
         <div id="confirma-corpo"></div>
       </div>
     </section>
+
+    <section class="ui-screen" id="screen-treino" hidden>
+      <div class="ui-card">
+        <h1 class="ui-title" style="color:#36d96b">📚 TREINO</h1>
+        <p class="ui-sub">Escolha o que treinar</p>
+        <div id="treino-corpo"></div>
+        <button class="ui-btn ui-voltar" type="button" data-acao="menu">↩  Menu</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Camada de gameplay (botões de resposta + pausa) sobre o canvas -->
+  <div id="jogo-root" hidden>
+    <div id="jogo-respostas">
+      <button class="resp-btn rosa" type="button"></button>
+      <button class="resp-btn roxo" type="button"></button>
+      <button class="resp-btn ciano" type="button"></button>
+      <button class="resp-btn ouro" type="button"></button>
+    </div>
+    <button id="jogo-pausa-btn" type="button" hidden>⏸</button>
+    <div id="jogo-modal" hidden>
+      <div class="jogo-modal-card">
+        <h1 class="ui-title">⏸ PAUSA</h1>
+        <button class="ui-btn jm-continuar" type="button" data-pausa="continuar">▶  Continuar</button>
+        <button class="ui-btn jm-fases" type="button" data-pausa="fases">🗺  Fases</button>
+        <button class="ui-btn ui-voltar" type="button" data-pausa="menu">🏠  Menu</button>
+      </div>
+    </div>
   </div>
 
   <!-- Phaser 3 (vendorizado localmente, funciona offline) -->
@@ -128,6 +156,7 @@
 
   <!-- Camada de UI em HTML -->
   <script src="js/ui/screens.js"></script>
+  <script src="js/ui/gameui.js"></script>
 
   <!-- Bootstrap -->
   <script src="js/main.js"></script>

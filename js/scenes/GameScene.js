@@ -43,7 +43,6 @@ class GameScene extends Phaser.Scene {
     this.bossHpMax = 0;
     this.acabou = false;
     this.pausado = false;
-    this.botoesResposta = [];
 
     // estatísticas da partida (relatório + repetição inteligente)
     this.acertos = 0;
@@ -63,6 +62,23 @@ class GameScene extends Phaser.Scene {
       try {
         Storage.adicionarTempo(this.time.now - this._tInicio);
       } catch (e) {}
+      GameUI.sair();
+    });
+
+    // camada HTML de respostas + pausa sobre o canvas
+    GameUI.entrar({ onPause: () => this.pausar() });
+    GameUI.setPausaAcoes({
+      continuar: () => this.retomar(),
+      fases: () => {
+        GameUI.sair();
+        UIScreens.abrir("grade");
+        this.scene.stop();
+      },
+      menu: () => {
+        GameUI.sair();
+        UIScreens.abrir("menu");
+        this.scene.stop();
+      },
     });
 
     this.particulas = this.add.particles(0, 0, "brilho", {
@@ -123,13 +139,7 @@ class GameScene extends Phaser.Scene {
       color: corHeroi,
     });
 
-    // botão de pausa
-    this.btnPause = this.add
-      .text(GAME_WIDTH - 34, 30, "⏸", { fontSize: "44px" })
-      .setOrigin(1, 0)
-      .setInteractive({ useHandCursor: true });
-    this.btnPause.on("pointerdown", () => this.pausar());
-
+    // (a pausa é um botão HTML da camada de gameplay — GameUI)
     this.atualizarHUD();
   }
 
@@ -212,7 +222,6 @@ class GameScene extends Phaser.Scene {
     this.timerAtivo = false;
 
     this._floatPool = [];
-    this.criarBotoesResposta();
   }
 
   tituloFase() {
@@ -315,50 +324,13 @@ class GameScene extends Phaser.Scene {
     this.txtPergunta.setText(`${this.q.texto} = ?`);
     Util.falar(`${this.q.a} vezes ${this.q.b}`);
 
-    this.atualizarBotoesResposta();
+    // botões de resposta em HTML (camada GameUI) — toque nativo confiável
+    GameUI.setRespostas(this.opcoes, (valor) => this.responder(valor));
     this.iniciarTimer();
   }
 
-  criarBotoesResposta() {
-    const cx = GAME_WIDTH / 2;
-    // Alvos grandes e bem espaçados, com folga de toque (hitPad) que fecha os
-    // vãos entre os botões — toques imprecisos de crianças passam a registrar.
-    const baseY = 842;
-    const dx = 344; // centros em cx ± 172
-    const dy = 182;
-    this.coresBotoes = [0xff3ea5, 0x7b2ff7, 0x2ff7e6, 0xffd23e];
-    for (let i = 0; i < 4; i++) {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      const x = cx + (col === 0 ? -dx / 2 : dx / 2);
-      const y = baseY + row * dy;
-      const corTexto = this.coresBotoes[i] === 0xffd23e ? "#0d0d12" : "#ffffff";
-      const b = UI.botao(this, x, y, "", {
-        cor: this.coresBotoes[i],
-        w: 320,
-        h: 156,
-        tamFonte: 64,
-        corTexto,
-        hitPad: 11,
-      });
-      b.desligar();
-      this.botoesResposta.push(b);
-    }
-  }
-
-  atualizarBotoesResposta() {
-    this.opcoes.forEach((valor, i) => {
-      const b = this.botoesResposta[i];
-      b.setLabel(`${valor}`);
-      b.setCor(this.coresBotoes[i]);
-      b.setScale(1);
-      b.setHandler(() => this.responder(valor, b));
-      b.ligar();
-    });
-  }
-
   limparBotoes() {
-    this.botoesResposta.forEach((b) => b.desligar());
+    GameUI.esconderRespostas();
     this.pararTimer();
     this.timerBarBg.setVisible(false);
     this.timerFill.setVisible(false);
@@ -405,23 +377,20 @@ class GameScene extends Phaser.Scene {
   }
 
   // ---------- Respostas ----------
-  responder(valor, botao) {
+  responder(valor) {
     if (this.acabou || this.respondendo || this.pausado) return;
     this.pararTimer();
-    Storage.registrarResposta(this.q.a, this.q.b, valor === this.q.resposta);
-    if (valor === this.q.resposta) {
-      this.acertar(botao);
-    } else {
-      if (botao) botao.setCor(0xff3030);
-      this.errar(botao);
-    }
+    const certo = valor === this.q.resposta;
+    Storage.registrarResposta(this.q.a, this.q.b, certo);
+    if (certo) this.acertar();
+    else this.errar(valor);
   }
 
-  acertar(botao) {
+  acertar() {
     this.respondendo = true;
+    GameUI.feedback(this.q.resposta, null);
     this.acertos += 1;
     this.moedasPartida += 2;
-    if (botao) botao.setCor(0x36d96b);
     this.combo += 1;
     this.maxCombo = Math.max(this.maxCombo, this.combo);
     const base = this.isBoss ? 20 : 10;
@@ -458,7 +427,7 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  errar(botao) {
+  errar(valorErrado) {
     this.respondendo = true;
     this.erros += 1;
     this.errosFatos.push(this.q.texto);
@@ -469,10 +438,8 @@ class GameScene extends Phaser.Scene {
     this.cameras.main.shake(250, 0.012);
     this.cameras.main.flash(150, 120, 0, 0);
 
-    // destaca a resposta correta + dica de reforço
-    this.botoesResposta.forEach((b) => {
-      if (b.label.text === `${this.q.resposta}`) b.setCor(0x36d96b);
-    });
+    // destaca a resposta correta (verde) e a tocada errada (vermelha) + dica
+    GameUI.feedback(this.q.resposta, valorErrado);
     this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
     this.flashcard = Util.flashcardMultiplicacao(this, this.q.a, this.q.b, 0x36d96b);
     this.flutuarTexto("-1 ❤️", "#ff5050");
@@ -527,44 +494,7 @@ class GameScene extends Phaser.Scene {
     this.time.paused = true;
     this.tweens.pauseAll();
     Util.pararVoz();
-
-    const cx = GAME_WIDTH / 2;
-    this.overlayPausa = this.add.container(0, 0).setDepth(200);
-    const g = this.add.graphics();
-    g.fillStyle(0x0d0d12, 0.94);
-    g.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-    this.overlayPausa.add(g);
-    this.overlayPausa.add(UI.titulo(this, cx, 420, "PAUSA", 90, "#2ff7e6"));
-    this.overlayPausa.add(
-      UI.botao(this, cx, 600, "▶  Continuar", {
-        cor: 0x36d96b,
-        w: 460,
-        h: 120,
-        onClick: () => this.retomar(),
-      })
-    );
-    this.overlayPausa.add(
-      UI.botao(this, cx, 750, "🗺  Fases", {
-        cor: 0xff3ea5,
-        w: 460,
-        h: 110,
-        onClick: () => {
-          UIScreens.abrir("grade");
-          this.scene.stop();
-        },
-      })
-    );
-    this.overlayPausa.add(
-      UI.botao(this, cx, 890, "🏠  Menu", {
-        cor: 0x444455,
-        w: 460,
-        h: 110,
-        onClick: () => {
-          UIScreens.abrir("menu");
-          this.scene.stop();
-        },
-      })
-    );
+    GameUI.abrirModal(); // modal de pausa em HTML (ações já registradas no create)
   }
 
   retomar() {
@@ -572,10 +502,7 @@ class GameScene extends Phaser.Scene {
     this.pausado = false;
     this.time.paused = false;
     this.tweens.resumeAll();
-    if (this.overlayPausa) {
-      this.overlayPausa.destroy();
-      this.overlayPausa = null;
-    }
+    GameUI.fecharModal();
   }
 
   // ---------- Fim ----------

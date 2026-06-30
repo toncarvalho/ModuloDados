@@ -52,6 +52,12 @@ window.addEventListener("load", () => {
         window.game.scale.refresh();
       } catch (e) {}
     }
+    // reposiciona a camada HTML de respostas/pausa sobre o canvas
+    if (typeof GameUI !== "undefined" && GameUI.posicionar) {
+      try {
+        GameUI.posicionar();
+      } catch (e) {}
+    }
   };
   let agendado = null;
   const realinharDebounce = () => {
