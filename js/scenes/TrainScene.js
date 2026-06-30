@@ -8,9 +8,10 @@ class TrainScene extends Phaser.Scene {
   }
 
   init(data) {
-    // permite iniciar direto numa tabuada (ex.: vindo do painel de progresso)
-    this.tabInicial = (data && data.tabuadas) || null;
-    this.tituloInicial = (data && data.titulo) || "Treino dirigido";
+    // A seleção da tabuada é HTML (UIScreens.abrir("treino")); a cena já recebe
+    // a(s) tabuada(s) escolhida(s). Fallback defensivo: Mix 1–10.
+    this.tabInicial = (data && data.tabuadas) || [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    this.tituloInicial = (data && data.titulo) || "Mix 1–10";
   }
 
   create() {
@@ -24,72 +25,19 @@ class TrainScene extends Phaser.Scene {
       try {
         Storage.adicionarTempo(this.time.now - this._tInicio);
       } catch (e) {}
+      GameUI.sair();
     });
 
-    if (this.tabInicial && this.tabInicial.length) {
-      this.iniciarTreino(this.tabInicial, this.tituloInicial);
-    } else {
-      this.mostrarSelecao();
-    }
-  }
+    // camada HTML de respostas (botão "↩" volta ao menu)
+    GameUI.entrar({
+      onMenu: () => {
+        GameUI.sair();
+        UIScreens.abrir("menu");
+        this.scene.stop();
+      },
+    });
 
-  // ---- seleção da tabuada ----
-  mostrarSelecao() {
-    const cx = GAME_WIDTH / 2;
-    this.grupoSel = this.add.container(0, 0);
-    this.grupoSel.add(UI.titulo(this, cx, 150, "TREINO", 84, "#36d96b"));
-    this.grupoSel.add(
-      this.add
-        .text(cx, 230, "Escolha o que treinar", {
-          fontFamily: UI.FONT,
-          fontSize: "30px",
-          color: "#ffd23e",
-          fontStyle: "bold",
-        })
-        .setOrigin(0.5)
-    );
-
-    // grade 1..10 (5 col × 2 lin) + Mix
-    const cols = 5;
-    const x0 = 120;
-    const dx = 120;
-    const y0 = 360;
-    const dy = 130;
-    for (let n = 1; n <= 10; n++) {
-      const i = n - 1;
-      const x = x0 + (i % cols) * dx;
-      const y = y0 + Math.floor(i / cols) * dy;
-      this.grupoSel.add(
-        UI.botao(this, x, y, `${n}`, {
-          cor: 0x7b2ff7,
-          w: 100,
-          h: 100,
-          tamFonte: 46,
-          onClick: () => this.iniciarTreino([n], `Tabuada do ${n}`),
-        })
-      );
-    }
-    this.grupoSel.add(
-      UI.botao(this, cx, 700, "🌀  Mix (1–10)", {
-        cor: 0xff3ea5,
-        w: 460,
-        h: 110,
-        onClick: () =>
-          this.iniciarTreino([1, 2, 3, 4, 5, 6, 7, 8, 9, 10], "Mix 1–10"),
-      })
-    );
-    this.grupoSel.add(
-      UI.botao(this, cx, 1120, "↩  Menu", {
-        cor: 0x444455,
-        w: 360,
-        h: 96,
-        tamFonte: 34,
-        onClick: () => {
-          UIScreens.abrir("menu");
-          this.scene.stop();
-        },
-      })
-    );
+    this.iniciarTreino(this.tabInicial, this.tituloInicial);
   }
 
   // ---- prática ----
@@ -98,7 +46,6 @@ class TrainScene extends Phaser.Scene {
     this.acertos = 0;
     this.erros = 0;
     this.respondendo = false;
-    if (this.grupoSel) this.grupoSel.destroy();
     this.montarTreino(titulo);
     this.novaPergunta();
   }
@@ -144,40 +91,7 @@ class TrainScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setVisible(false);
 
-    // 4 botões reaproveitados (alvos grandes + folga de toque)
-    this.coresBotoes = [0xff3ea5, 0x7b2ff7, 0x2ff7e6, 0xffd23e];
-    this.botoes = [];
-    const baseY = 776;
-    const dx = 344;
-    const dy = 182;
-    for (let i = 0; i < 4; i++) {
-      const col = i % 2;
-      const row = Math.floor(i / 2);
-      const x = cx + (col === 0 ? -dx / 2 : dx / 2);
-      const y = baseY + row * dy;
-      const corTexto = this.coresBotoes[i] === 0xffd23e ? "#0d0d12" : "#ffffff";
-      this.botoes.push(
-        UI.botao(this, x, y, "", {
-          cor: this.coresBotoes[i],
-          w: 320,
-          h: 156,
-          tamFonte: 64,
-          corTexto,
-          hitPad: 11,
-        })
-      );
-    }
-
-    UI.botao(this, cx, 1180, "↩  Menu", {
-      cor: 0x444455,
-      w: 320,
-      h: 80,
-      tamFonte: 30,
-      onClick: () => {
-        UIScreens.abrir("menu");
-        this.scene.stop();
-      },
-    });
+    // os 4 botões de resposta são HTML (camada GameUI) — toque nativo confiável
     this.atualizarPlacar();
   }
 
@@ -197,18 +111,11 @@ class TrainScene extends Phaser.Scene {
     this.opcoes = MathEngine.gerarOpcoes(this.q.resposta);
     this.txtPergunta.setText(`${this.q.texto} = ?`);
     Util.falar(`${this.q.a} vezes ${this.q.b}`);
-    this.opcoes.forEach((valor, i) => {
-      const b = this.botoes[i];
-      b.setLabel(`${valor}`);
-      b.setCor(this.coresBotoes[i]);
-      b.setScale(1);
-      b.setHandler(() => this.responder(valor, b));
-      b.ligar();
-    });
+    GameUI.setRespostas(this.opcoes, (valor) => this.responder(valor));
     this.respondendo = false;
   }
 
-  responder(valor, botao) {
+  responder(valor) {
     if (this.respondendo) return;
     this.respondendo = true;
     const certo = valor === this.q.resposta;
@@ -216,16 +123,13 @@ class TrainScene extends Phaser.Scene {
     if (certo) {
       this.acertos += 1;
       Storage.addMoedas(1);
-      botao.setCor(0x36d96b);
+      GameUI.feedback(this.q.resposta, null);
       AudioFX.acerto();
       Util.vibrar(30);
       this.time.delayedCall(320, () => this.novaPergunta());
     } else {
       this.erros += 1;
-      botao.setCor(0xff3030);
-      this.botoes.forEach((b) => {
-        if (b.label.text === `${this.q.resposta}`) b.setCor(0x36d96b);
-      });
+      GameUI.feedback(this.q.resposta, valor);
       this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
       this.flashcard = Util.flashcardMultiplicacao(this, this.q.a, this.q.b, 0x36d96b);
       AudioFX.erro();

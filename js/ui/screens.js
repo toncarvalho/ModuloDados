@@ -380,6 +380,19 @@ const UIScreens = (() => {
     }
   }
 
+  // ===================== TREINO (seleção de tabuada) =====================
+  function montarTreino() {
+    const corpo = document.getElementById("treino-corpo");
+    if (!corpo) return;
+    let tiles = "";
+    for (let n = 1; n <= 10; n++) {
+      tiles += `<button class="treino-tile" type="button" data-treino="${n}">${n}</button>`;
+    }
+    corpo.innerHTML = `
+      <div class="treino-grid">${tiles}</div>
+      <button class="ui-btn treino-mix" type="button" data-acao="treino-mix">🌀  Mix (1–10)</button>`;
+  }
+
   // ===================== CONFIRMA (remover perfil) =====================
   function montarConfirma() {
     const corpo = document.getElementById("confirma-corpo");
@@ -501,6 +514,7 @@ const UIScreens = (() => {
     loja: montarLoja,
     resultado: montarResultado,
     confirma: montarConfirma,
+    treino: montarTreino,
   };
 
   // ----- roteador de cliques -----
@@ -515,7 +529,9 @@ const UIScreens = (() => {
       case "heroi": return api.abrir("heroi");
       case "perfis":
         modoPerfil = "selecao"; removendoPerfil = false; return api.abrir("perfis");
-      case "treino": return iniciarJogo("TrainScene", {});
+      case "treino": return api.abrir("treino");
+      case "treino-mix":
+        return iniciarJogo("TrainScene", { tabuadas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], titulo: "Mix 1–10" });
       case "treino-fracas":
         return iniciarJogo("TrainScene", { tabuadas: treinoFracas, titulo: `Pontos fracos: ${treinoFracas.join(", ")}` });
       case "continuar":
@@ -578,7 +594,7 @@ const UIScreens = (() => {
       if (!r) return;
       r.addEventListener("click", (ev) => {
         const alvo = ev.target.closest(
-          "[data-cfg],[data-roupa],[data-fase],[data-heroi],[data-perfil],[data-novoheroi],[data-acao]"
+          "[data-cfg],[data-roupa],[data-fase],[data-treino],[data-heroi],[data-perfil],[data-novoheroi],[data-acao]"
         );
         if (!alvo || !r.contains(alvo)) return;
         AudioFX.unlock();
@@ -586,6 +602,10 @@ const UIScreens = (() => {
         if (alvo.dataset.roupa) return escolherRoupa(alvo.dataset.roupa);
         if (alvo.dataset.fase)
           return iniciarJogo("GameScene", { faseId: +alvo.dataset.fase, heroId: Storage.getHeroiId() });
+        if (alvo.dataset.treino) {
+          const n = +alvo.dataset.treino;
+          return iniciarJogo("TrainScene", { tabuadas: [n], titulo: `Tabuada do ${n}` });
+        }
         if (alvo.dataset.heroi) {
           AudioFX.acerto();
           Storage.setHeroi(+alvo.dataset.heroi);
