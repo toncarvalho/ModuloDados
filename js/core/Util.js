@@ -9,6 +9,18 @@ const Util = (() => {
       return "#" + cor.toString(16).padStart(6, "0");
     },
 
+    /** true se o usuário prefere movimento reduzido (evita shake/flash). */
+    reduzirMovimento() {
+      try {
+        return !!(
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        );
+      } catch (e) {
+        return false;
+      }
+    },
+
     /** Vibra o aparelho (se suportado). */
     vibrar(ms) {
       if (navigator.vibrate) {

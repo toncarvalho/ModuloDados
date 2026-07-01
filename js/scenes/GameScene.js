@@ -294,7 +294,7 @@ class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(100);
     banner.setShadow(0, 0, "#ff3ea5", 20, true, true);
-    this.cameras.main.shake(400, 0.01);
+    if (!Util.reduzirMovimento()) this.cameras.main.shake(400, 0.01);
     AudioFX.golpe();
 
     this.limparBotoes();
@@ -320,8 +320,9 @@ class GameScene extends Phaser.Scene {
       JOGO.faixaFator,
       Storage.getFatos()
     );
-    this.opcoes = MathEngine.gerarOpcoes(this.q.resposta);
+    this.opcoes = MathEngine.gerarOpcoes(this.q.resposta, this.q.a, this.q.b);
     this.txtPergunta.setText(`${this.q.texto} = ?`);
+    GameUI.anunciar(`Quanto é ${this.q.a} vezes ${this.q.b}?`);
     Util.falar(`${this.q.a} vezes ${this.q.b}`);
 
     // botões de resposta em HTML (camada GameUI) — toque nativo confiável
@@ -435,11 +436,14 @@ class GameScene extends Phaser.Scene {
     this.vidas -= 1;
     AudioFX.erro();
     Util.vibrar([60, 40, 60]);
-    this.cameras.main.shake(250, 0.012);
-    this.cameras.main.flash(150, 120, 0, 0);
+    if (!Util.reduzirMovimento()) {
+      this.cameras.main.shake(250, 0.012);
+      this.cameras.main.flash(150, 120, 0, 0);
+    }
 
     // destaca a resposta correta (verde) e a tocada errada (vermelha) + dica
     GameUI.feedback(this.q.resposta, valorErrado);
+    GameUI.anunciar(`Não foi dessa vez. ${this.q.texto} = ${this.q.resposta}.`);
     this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
     this.flashcard = Util.flashcardMultiplicacao(this, this.q.a, this.q.b, 0x36d96b);
     this.flutuarTexto("-1 ❤️", "#ff5050");

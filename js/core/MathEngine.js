@@ -60,14 +60,34 @@ const MathEngine = (() => {
 
   /**
    * Gera 4 alternativas embaralhadas, sempre contendo a resposta,
-   * com distratores plausíveis (próximos) e sem duplicatas.
+   * com distratores plausíveis e sem duplicatas.
+   *
+   * Quando os fatores (a, b) são informados, prioriza os erros CLÁSSICOS de
+   * tabuada — a "linha vizinha": a×(b±1) e (a±1)×b (ex.: 7×8 → 56, com 63,
+   * 48 e 49 por perto) — o que treina de verdade, em vez de números aleatórios.
    * @param {number} resposta
+   * @param {number} [a]  primeiro fator (opcional)
+   * @param {number} [b]  segundo fator (opcional)
    * @returns {number[]}
    */
-  function gerarOpcoes(resposta) {
+  function gerarOpcoes(resposta, a, b) {
     const opcoes = new Set([resposta]);
 
-    // deltas plausíveis: erros comuns de tabuada
+    // 1) distratores pedagógicos: até 2 resultados da "linha vizinha",
+    //    sorteados para as alternativas não ficarem previsíveis
+    if (a != null && b != null) {
+      const vizinhos = embaralhar(
+        [a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b].filter(
+          (n) => n > 0 && n !== resposta
+        )
+      );
+      for (const v of vizinhos) {
+        if (opcoes.size >= 3) break; // deixa ao menos 1 vaga p/ delta próximo
+        opcoes.add(v);
+      }
+    }
+
+    // 2) completa com deltas plausíveis (próximos da resposta)
     const deltasBase = [-1, 1, -2, 2, resposta > 12 ? -10 : -3, 3, -4, 4, 5, -5];
 
     let i = 0;

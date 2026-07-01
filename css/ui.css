@@ -907,3 +907,28 @@
   outline: 3px solid #2ff7e6;
   outline-offset: 2px;
 }
+
+/* ---------------- ACESSIBILIDADE ---------------- */
+/* texto só para leitores de tela (pergunta/feedback do gameplay) */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* respeita quem prefere movimento reduzido (risco vestibular) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
