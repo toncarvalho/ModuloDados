@@ -247,6 +247,65 @@ function ok(cond, msg) {
   ok(S.ofensivaAtual("2026-01-20") === 0, "ofensiva quebrada após dias parados");
 }
 
+// 13) Backup: exportar/importar (restauração completa em outro "aparelho")
+{
+  const ls = makeLS();
+  const S = loadStorage(ls);
+  const ana = S.criarPerfil("Ana", 2);
+  S.setEstrelas(1, 3);
+  S.addMoedas(77);
+  S.criarPerfil("Bia", 1); // Bia vira o perfil atual
+  S.setConfig("voz", true);
+
+  const backup = S.exportarTudo();
+  ok(backup.formato === "idolmath-backup", "backup tem o formato esperado");
+  ok(backup.versao === 1, "backup tem versão");
+  ok(Object.keys(backup.saves).length === 2, "backup contém os 2 saves");
+
+  // restaura num localStorage limpo (outro aparelho)
+  const ls2 = makeLS();
+  const S2 = loadStorage(ls2);
+  const r = S2.importarTudo(backup);
+  ok(r.ok === true && r.perfis === 2, "importa os 2 perfis");
+  ok(S2.listarPerfis().length === 2, "perfis restaurados");
+  ok(S2.perfilAtual().nome === "Bia", "perfil atual preservado (Bia)");
+  S2.selecionarPerfil(ana.id);
+  ok(S2.totalEstrelas() === 3, "estrelas da Ana restauradas");
+  ok(S2.getMoedas() === 77, "moedas da Ana restauradas");
+  ok(S2.getConfig().voz === true, "config restaurada");
+
+  // importar substitui os perfis existentes (e apaga os saves antigos)
+  const ls3 = makeLS();
+  const S3 = loadStorage(ls3);
+  const velho = S3.criarPerfil("Velho", 1);
+  const r3 = S3.importarTudo(backup);
+  ok(r3.ok === true && S3.listarPerfis().length === 2, "substitui os perfis atuais");
+  ok(!ls3.has(`idolmath.save.${velho.id}`), "save antigo removido na importação");
+
+  // validação de formato
+  ok(S2.importarTudo(null).ok === false, "rejeita null");
+  ok(S2.importarTudo({}).ok === false, "rejeita objeto sem formato");
+  ok(
+    S2.importarTudo({ formato: "idolmath-backup", perfis: { perfis: [] } }).ok === false,
+    "rejeita backup sem perfis"
+  );
+  ok(S2.listarPerfis().length === 2, "dados intactos após importações inválidas");
+}
+
+// 14) onFalhaGravacao: avisa quando o setItem falha
+{
+  const ls = makeLS();
+  const S = loadStorage(ls);
+  S.criarPerfil("Ana", 1);
+  let avisos = 0;
+  S.onFalhaGravacao(() => avisos++);
+  ls.setItem = () => {
+    throw new Error("QuotaExceededError");
+  };
+  S.addMoedas(10);
+  ok(avisos === 1, "callback de falha de gravação é chamado");
+}
+
 if (falhas === 0) console.log("✅ Storage: todos os testes passaram.");
 else {
   console.error(`❌ Storage: ${falhas} falha(s).`);

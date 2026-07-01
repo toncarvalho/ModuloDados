@@ -50,11 +50,17 @@ const Storage = (() => {
       return fallback;
     }
   }
+  let _onFalhaGravacao = null; // callback da UI p/ avisar quando salvar falhar
   function gravar(chave, valor) {
     try {
       localStorage.setItem(chave, JSON.stringify(valor));
     } catch (e) {
-      /* armazenamento indisponível — segue sem persistir */
+      // armazenamento cheio/bloqueado — segue em memória, mas avisa a UI
+      if (_onFalhaGravacao) {
+        try {
+          _onFalhaGravacao(e);
+        } catch (e2) {}
+      }
     }
   }
   function remover(chave) {
@@ -489,6 +495,56 @@ const Storage = (() => {
     setConfig(chave, valor) {
       _config[chave] = !!valor;
       gravar(KEY_CONFIG, _config);
+    },
+
+    // ===================== BACKUP (exportar/importar progresso) =====================
+    /** Registra um aviso da UI para quando o localStorage falhar ao gravar. */
+    onFalhaGravacao(fn) {
+      _onFalhaGravacao = fn;
+    },
+    /** Snapshot completo (perfis + saves + config) para backup em arquivo. */
+    exportarTudo() {
+      const saves = {};
+      _index.perfis.forEach((p) => {
+        saves[p.id] = carregarSave(p.id);
+      });
+      return {
+        formato: "idolmath-backup",
+        versao: 1,
+        geradoEm: new Date().toISOString(),
+        config: _config,
+        perfis: { atual: _index.atual, perfis: _index.perfis },
+        saves,
+      };
+    },
+    /**
+     * Restaura um backup gerado por exportarTudo(), SUBSTITUINDO os perfis e
+     * saves atuais. Valida o formato; retorna { ok, perfis } ou { ok:false }.
+     */
+    importarTudo(dados) {
+      if (!dados || dados.formato !== "idolmath-backup") return { ok: false };
+      const idx = dados.perfis;
+      if (!idx || !Array.isArray(idx.perfis)) return { ok: false };
+      const perfis = idx.perfis
+        .filter((p) => p && typeof p.id === "string" && p.nome)
+        .slice(0, MAX_PERFIS);
+      if (!perfis.length) return { ok: false };
+
+      _index.perfis.forEach((p) => remover(KEY_SAVE(p.id)));
+      _index = {
+        atual: perfis.some((p) => p.id === idx.atual) ? idx.atual : perfis[0].id,
+        perfis,
+      };
+      salvarIndice();
+      perfis.forEach((p) => {
+        gravar(KEY_SAVE(p.id), Object.assign(defaultsSave(), (dados.saves || {})[p.id] || {}));
+      });
+      if (dados.config) {
+        _config = Object.assign(defaultsConfig(), dados.config);
+        gravar(KEY_CONFIG, _config);
+      }
+      state = carregarSave(_index.atual);
+      return { ok: true, perfis: perfis.length };
     },
   };
 })();

@@ -37,6 +37,8 @@ resposta certa para atacar, encadeie **combos**, não perca suas **vidas** ❤�
   cada uma rende **moedas**.
 - 🪙 **Moedas & 🛍️ Loja**: ganhe moedas jogando e desbloqueie **roupas** para os personagens
   (cada roupa troca a figura); a roupa equipada aparece no HUD e no menu.
+- 💾 **Backup do progresso**: exporte/importe todos os jogadores num arquivo JSON
+  (em **Ajustes**) — útil para trocar de aparelho ou se o navegador limpar os dados.
 - ⏸️ **Pausa**, **dica no erro** (mostra a conta certa) e **transições suaves**.
 - 🎵 Música de fundo + efeitos (Web Audio, sem arquivos), **vibração** e **leitura em voz alta** —
   tudo ligável/desligável em **Ajustes**.

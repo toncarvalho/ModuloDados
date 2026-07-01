@@ -839,3 +839,43 @@
 }
 .jm-continuar { background: #36d96b; color: #0d0d12; }
 .jm-fases { background: #ff3ea5; }
+
+/* ---------------- BACKUP (Ajustes) ---------------- */
+.ajustes-backup-titulo {
+  margin-top: 10px;
+}
+.ajustes-backup {
+  display: flex;
+  gap: 12px;
+}
+.ajustes-backup .ui-btn {
+  flex: 1;
+}
+.ab-exportar { background: #2f7de6; }
+.ab-importar { background: #444455; }
+
+/* ---------------- TOAST (avisos rápidos) ---------------- */
+#ui-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 28px;
+  transform: translate(-50%, 20px);
+  z-index: 200;
+  max-width: min(92vw, 460px);
+  padding: 14px 20px;
+  border-radius: 16px;
+  background: #15101f;
+  border: 2px solid #2ff7e6;
+  box-shadow: 0 0 24px rgba(47, 247, 230, 0.4);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: clamp(16px, 4.4vw, 20px);
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+#ui-toast.on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
