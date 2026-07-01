@@ -23,7 +23,7 @@ const UIScreens = (() => {
     return document.getElementById("ui-root");
   }
   function corHex(cor) {
-    return "#" + cor.toString(16).padStart(6, "0");
+    return Util.corHex(cor);
   }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, (c) =>

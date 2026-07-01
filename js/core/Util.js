@@ -4,6 +4,11 @@
  */
 const Util = (() => {
   return {
+    /** Converte cor numérica (0xff3ea5) em string CSS ("#ff3ea5"). */
+    corHex(cor) {
+      return "#" + cor.toString(16).padStart(6, "0");
+    },
+
     /** Vibra o aparelho (se suportado). */
     vibrar(ms) {
       if (navigator.vibrate) {

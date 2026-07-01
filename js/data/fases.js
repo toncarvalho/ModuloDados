@@ -14,6 +14,24 @@ const JOGO = {
   tempoResposta: 10, // segundos por pergunta (null = sem timer)
   numInimigos: 6, // inimigos comuns antes do chefão
   bossHp: 8, // acertos para derrotar o chefão
+  vidas: 3, // vidas na fase normal e no Desafio do Dia
+  vidasBossRush: 5, // vidas no Boss Rush (12 chefões seguidos)
+  inimigosDesafio: 10, // inimigos do Desafio do Dia (sem chefão)
+  pontos: {
+    base: 10, // pontos por acerto (× combo)
+    chefao: 20, // pontos por acerto no chefão (× combo)
+    bonusVida: 50, // bônus de vitória por vida restante
+    bonusCombo: 5, // bônus de vitória por ponto de combo máximo
+  },
+  moedas: {
+    acerto: 2, // moedas por acerto em partida
+    treinoAcerto: 1, // moedas por acerto no Treino
+    bonusVitoria: 20, // bônus fixo ao vencer
+    porEstrela: 10, // bônus por estrela conquistada
+    desafioBase: 30, // recompensa base do Desafio do Dia
+    desafioPorDia: 5, // extra por dia de ofensiva...
+    desafioTetoDias: 7, // ...até este teto de dias
+  },
 };
 
 /**

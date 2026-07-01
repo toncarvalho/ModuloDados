@@ -136,18 +136,18 @@
   <!-- Phaser 3 (vendorizado localmente, funciona offline) -->
   <script src="vendor/phaser.min.js"></script>
 
-  <!-- Core -->
-  <script src="js/core/Storage.js"></script>
-  <script src="js/core/MathEngine.js"></script>
-  <script src="js/core/Audio.js"></script>
-  <script src="js/core/UI.js"></script>
-  <script src="js/core/Util.js"></script>
-
-  <!-- Data -->
+  <!-- Data (puro, sem dependências — carrega antes do core) -->
   <script src="js/data/fases.js"></script>
   <script src="js/data/herois.js"></script>
   <script src="js/data/roupas.js"></script>
   <script src="js/data/conquistas.js"></script>
+
+  <!-- Core (Storage usa MathEngine.chaveFato e JOGO.moedas) -->
+  <script src="js/core/MathEngine.js"></script>
+  <script src="js/core/Storage.js"></script>
+  <script src="js/core/Audio.js"></script>
+  <script src="js/core/UI.js"></script>
+  <script src="js/core/Util.js"></script>
 
   <!-- Cenas Phaser: só o gameplay (Boot gera texturas; navegação é HTML) -->
   <script src="js/scenes/BootScene.js"></script>

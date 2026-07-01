@@ -11,10 +11,12 @@ import { dirname, join } from "node:path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const code = readFileSync(join(__dirname, "../js/core/Storage.js"), "utf8");
-// dados globais usados pelo Storage (roupas/conquistas)
+// globais usados pelo Storage: dados (roupas/conquistas/herois/JOGO) + MathEngine
 const codeRoupas = readFileSync(join(__dirname, "../js/data/roupas.js"), "utf8");
 const codeConq = readFileSync(join(__dirname, "../js/data/conquistas.js"), "utf8");
 const codeHerois = readFileSync(join(__dirname, "../js/data/herois.js"), "utf8");
+const codeFases = readFileSync(join(__dirname, "../js/data/fases.js"), "utf8");
+const codeMath = readFileSync(join(__dirname, "../js/core/MathEngine.js"), "utf8");
 
 function makeLS(initial = {}) {
   const m = new Map(Object.entries(initial));
@@ -27,8 +29,10 @@ function makeLS(initial = {}) {
   };
 }
 function loadStorage(ls) {
-  // herois/roupas/conquistas definem globais usados pelo Storage
-  const bundle = codeHerois + "\n" + codeRoupas + "\n" + codeConq + "\n" + code + "\nreturn Storage;";
+  // dados + MathEngine definem globais usados pelo Storage
+  const bundle =
+    codeHerois + "\n" + codeRoupas + "\n" + codeConq + "\n" + codeFases + "\n" +
+    codeMath + "\n" + code + "\nreturn Storage;";
   return new Function("localStorage", bundle)(ls);
 }
 

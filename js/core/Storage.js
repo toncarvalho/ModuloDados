@@ -63,10 +63,6 @@ const Storage = (() => {
     } catch (e) {}
   }
 
-  function chaveFato(a, b) {
-    return `${Math.min(a, b)}x${Math.max(a, b)}`;
-  }
-
   // ---- datas (desafio diário) ----
   function pad2(n) {
     return String(n).padStart(2, "0");
@@ -283,7 +279,7 @@ const Storage = (() => {
 
     // ===================== REPETIÇÃO INTELIGENTE (fatos fracos) + ESTATÍSTICAS =====================
     registrarResposta(a, b, acertou) {
-      const k = chaveFato(a, b);
+      const k = MathEngine.chaveFato(a, b); // chave canônica compartilhada com o motor
       let p = state.fatos[k] || 0;
       p = acertou ? Math.max(0, p * 0.5 - 0.2) : Math.min(8, p + 2);
       if (p <= 0.01) delete state.fatos[k];
@@ -465,7 +461,8 @@ const Storage = (() => {
     /**
      * Registra a conclusão do desafio do dia. Se já feito hoje, não recompensa.
      * Senão estende a ofensiva (ou reinicia se pulou dia), credita moedas-bônus
-     * (30 + min(ofensiva,7)*5) e retorna o resultado.
+     * (JOGO.moedas: desafioBase + min(ofensiva, teto) * desafioPorDia) e retorna
+     * o resultado.
      */
     registrarDesafioDiario(hoje) {
       const h = hoje || hojeISO();
@@ -478,7 +475,8 @@ const Storage = (() => {
       d.ofensiva = diff === 1 ? (d.ofensiva || 0) + 1 : 1;
       d.ultimoDia = h;
       if (d.ofensiva > (d.melhorOfensiva || 0)) d.melhorOfensiva = d.ofensiva;
-      const recompensa = 30 + Math.min(d.ofensiva, 7) * 5;
+      const m = JOGO.moedas;
+      const recompensa = m.desafioBase + Math.min(d.ofensiva, m.desafioTetoDias) * m.desafioPorDia;
       state.moedas = (state.moedas || 0) + recompensa;
       salvarSave();
       return { ja: false, ofensiva: d.ofensiva, melhorOfensiva: d.melhorOfensiva, recompensa };

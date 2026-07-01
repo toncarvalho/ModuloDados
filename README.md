@@ -71,18 +71,26 @@ No celular, abra o mesmo endereço na mesma rede, ou hospede no **GitHub Pages**
 ## 🛠️ Estrutura do projeto
 
 ```
-index.html            # ponto de entrada (carrega Phaser via CDN + scripts)
+index.html            # ponto de entrada: telas HTML (overlay) + scripts + registro do SW
 manifest.json         # configuração PWA
+sw.js                 # service worker (offline / cache do app shell)
 css/style.css         # fundo/glow e centralização do canvas
+css/ui.css            # estilos das telas HTML (menu, fases, loja…)
 js/main.js            # configuração do Phaser (Scale.FIT, retrato)
-js/data/fases.js      # ⭐ FASES + config global JOGO + CHEFÕES (data-driven)
+js/data/fases.js      # ⭐ FASES + config global JOGO (mecânica, pontos, moedas)
 js/data/herois.js     # 🦸 HEROIS (figura + cor + nome) — cosméticos
-assets/herois/*.svg   # figuras das heroínas (DiceBear / Lorelei, CC0)
-js/core/MathEngine.js # geração de perguntas e alternativas
-js/core/Audio.js      # efeitos sonoros (Web Audio)
+js/data/roupas.js     # 🛍️ roupas da loja (por herói)
+js/data/conquistas.js # 🏅 conquistas (condição + recompensa)
+assets/herois/*.svg   # figuras dos personagens (DiceBear / Avataaars)
+js/core/MathEngine.js # geração de perguntas e alternativas (puro, testável)
+js/core/Audio.js      # música + efeitos sonoros (Web Audio)
 js/core/Storage.js    # perfis locais + progresso/recorde/estrelas (localStorage)
-js/core/UI.js         # botões e textos neon reutilizáveis
-js/scenes/*.js        # Boot, Profile, Menu, Hero, Stage, Game, Result, Settings, Train
+js/core/UI.js         # textos/botões neon no canvas (Phaser)
+js/core/Util.js       # vibração, voz, flashcard de multiplicação, cores
+js/scenes/*.js        # Boot (texturas), Game e Train — só o gameplay é Phaser
+js/ui/screens.js      # telas HTML: menu, perfis, fases, ajustes, loja, resultado…
+js/ui/gameui.js       # botões de resposta + pausa (HTML sobre o canvas)
+tests/*.mjs           # testes (node tests/mathengine.test.mjs / storage.test.mjs)
 assets/icon.svg       # ícone do app
 ```
 
