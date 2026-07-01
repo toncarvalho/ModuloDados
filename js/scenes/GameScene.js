@@ -16,7 +16,7 @@ class GameScene extends Phaser.Scene {
     if (this.bossRush) {
       this.brIdx = 0;
       this.fase = FASES[0];
-      this.vidas = 5;
+      this.vidas = JOGO.vidasBossRush;
     } else if (this.diario) {
       // fase sintética: mix de todas as tabuadas, sem chefão
       this.fase = {
@@ -27,17 +27,17 @@ class GameScene extends Phaser.Scene {
         inimigoEmoji: "🌟",
         boss: { nome: "", emoji: "🌟", frase: "" },
       };
-      this.vidas = 3;
+      this.vidas = JOGO.vidas;
     } else {
       this.fase = getFase((data && data.faseId) || 1);
-      this.vidas = 3;
+      this.vidas = JOGO.vidas;
     }
     this.vidasIniciais = this.vidas;
 
     this.pontuacao = 0;
     this.combo = 0;
     this.maxCombo = 0;
-    this.inimigosRestantes = this.diario ? 10 : JOGO.numInimigos;
+    this.inimigosRestantes = this.diario ? JOGO.inimigosDesafio : JOGO.numInimigos;
     this.isBoss = false;
     this.bossHp = 0;
     this.bossHpMax = 0;
@@ -115,7 +115,7 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5, 0);
 
-    const corHeroi = "#" + this.heroi.cor.toString(16).padStart(6, "0");
+    const corHeroi = Util.corHex(this.heroi.cor);
     this.txtCombo = this.add
       .text(GAME_WIDTH - 30, 84, "", {
         fontFamily: UI.FONT,
@@ -294,7 +294,7 @@ class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(100);
     banner.setShadow(0, 0, "#ff3ea5", 20, true, true);
-    this.cameras.main.shake(400, 0.01);
+    if (!Util.reduzirMovimento()) this.cameras.main.shake(400, 0.01);
     AudioFX.golpe();
 
     this.limparBotoes();
@@ -320,8 +320,9 @@ class GameScene extends Phaser.Scene {
       JOGO.faixaFator,
       Storage.getFatos()
     );
-    this.opcoes = MathEngine.gerarOpcoes(this.q.resposta);
+    this.opcoes = MathEngine.gerarOpcoes(this.q.resposta, this.q.a, this.q.b);
     this.txtPergunta.setText(`${this.q.texto} = ?`);
+    GameUI.anunciar(`Quanto é ${this.q.a} vezes ${this.q.b}?`);
     Util.falar(`${this.q.a} vezes ${this.q.b}`);
 
     // botões de resposta em HTML (camada GameUI) — toque nativo confiável
@@ -390,10 +391,10 @@ class GameScene extends Phaser.Scene {
     this.respondendo = true;
     GameUI.feedback(this.q.resposta, null);
     this.acertos += 1;
-    this.moedasPartida += 2;
+    this.moedasPartida += JOGO.moedas.acerto;
     this.combo += 1;
     this.maxCombo = Math.max(this.maxCombo, this.combo);
-    const base = this.isBoss ? 20 : 10;
+    const base = this.isBoss ? JOGO.pontos.chefao : JOGO.pontos.base;
     this.pontuacao += base * this.combo;
 
     AudioFX.acerto();
@@ -435,11 +436,14 @@ class GameScene extends Phaser.Scene {
     this.vidas -= 1;
     AudioFX.erro();
     Util.vibrar([60, 40, 60]);
-    this.cameras.main.shake(250, 0.012);
-    this.cameras.main.flash(150, 120, 0, 0);
+    if (!Util.reduzirMovimento()) {
+      this.cameras.main.shake(250, 0.012);
+      this.cameras.main.flash(150, 120, 0, 0);
+    }
 
     // destaca a resposta correta (verde) e a tocada errada (vermelha) + dica
     GameUI.feedback(this.q.resposta, valorErrado);
+    GameUI.anunciar(`Não foi dessa vez. ${this.q.texto} = ${this.q.resposta}.`);
     this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
     this.flashcard = Util.flashcardMultiplicacao(this, this.q.a, this.q.b, 0x36d96b);
     this.flutuarTexto("-1 ❤️", "#ff5050");
@@ -511,6 +515,28 @@ class GameScene extends Phaser.Scene {
     return Phaser.Math.Clamp(this.vidas, 1, 3);
   }
 
+  /** Abre a tela HTML de resultado com os dados comuns da partida + extras. */
+  abrirResultado(extra) {
+    this.time.delayedCall(700, () => {
+      UIScreens.abrir(
+        "resultado",
+        Object.assign(
+          {
+            pontuacao: this.pontuacao,
+            maxCombo: this.maxCombo,
+            faseId: this.fase.id,
+            heroId: this.heroi.id,
+            acertos: this.acertos,
+            erros: this.erros,
+            errosFatos: this.errosFatos,
+          },
+          extra
+        )
+      );
+      this.scene.stop();
+    });
+  }
+
   vitoria() {
     if (this.acabou) return;
     this.acabou = true;
@@ -519,7 +545,7 @@ class GameScene extends Phaser.Scene {
     AudioFX.vitoria();
     Util.vibrar([40, 30, 80]);
 
-    this.pontuacao += this.vidas * 50 + this.maxCombo * 5;
+    this.pontuacao += this.vidas * JOGO.pontos.bonusVida + this.maxCombo * JOGO.pontos.bonusCombo;
     Storage.setMelhorPontuacao(this.pontuacao);
 
     // ---- Desafio do Dia: registra ofensiva + bônus, sem estrelas/fases ----
@@ -533,26 +559,17 @@ class GameScene extends Phaser.Scene {
         venceu: true,
       });
       const novasConquistas = Storage.avaliarConquistas({ venceu: true });
-      this.time.delayedCall(700, () => {
-        UIScreens.abrir("resultado", {
-          venceu: true,
-          diario: true,
-          jaFeito: res.ja,
-          ofensiva: res.ofensiva,
-          melhorOfensiva: res.melhorOfensiva,
-          pontuacao: this.pontuacao,
-          maxCombo: this.maxCombo,
-          faseId: 1,
-          heroId: this.heroi.id,
-          estrelas: 0,
-          acertos: this.acertos,
-          erros: this.erros,
-          errosFatos: this.errosFatos,
-          temProxima: false,
-          moedasGanhas: moedas,
-          novasConquistas,
-        });
-        this.scene.stop();
+      this.abrirResultado({
+        venceu: true,
+        diario: true,
+        jaFeito: res.ja,
+        ofensiva: res.ofensiva,
+        melhorOfensiva: res.melhorOfensiva,
+        faseId: 1,
+        estrelas: 0,
+        temProxima: false,
+        moedasGanhas: moedas,
+        novasConquistas,
       });
       return;
     }
@@ -570,7 +587,7 @@ class GameScene extends Phaser.Scene {
     }
 
     // moedas: acertos + bônus de vitória; conquistas
-    const moedas = this.moedasPartida + 20 + estrelas * 10;
+    const moedas = this.moedasPartida + JOGO.moedas.bonusVitoria + estrelas * JOGO.moedas.porEstrela;
     Storage.addMoedas(moedas);
     Storage.registrarFimDePartida({
       maxCombo: this.maxCombo,
@@ -579,23 +596,13 @@ class GameScene extends Phaser.Scene {
     });
     const novasConquistas = Storage.avaliarConquistas({ venceu: true, faseId: this.fase.id });
 
-    this.time.delayedCall(700, () => {
-      UIScreens.abrir("resultado", {
-        venceu: true,
-        bossRush: this.bossRush,
-        pontuacao: this.pontuacao,
-        maxCombo: this.maxCombo,
-        faseId: this.fase.id,
-        heroId: this.heroi.id,
-        estrelas,
-        acertos: this.acertos,
-        erros: this.erros,
-        errosFatos: this.errosFatos,
-        temProxima,
-        moedasGanhas: moedas,
-        novasConquistas,
-      });
-      this.scene.stop();
+    this.abrirResultado({
+      venceu: true,
+      bossRush: this.bossRush,
+      estrelas,
+      temProxima,
+      moedasGanhas: moedas,
+      novasConquistas,
     });
   }
 
@@ -626,24 +633,14 @@ class GameScene extends Phaser.Scene {
         }
       : {};
 
-    this.time.delayedCall(700, () => {
-      UIScreens.abrir("resultado", {
-        venceu: false,
-        bossRush: this.bossRush,
-        pontuacao: this.pontuacao,
-        maxCombo: this.maxCombo,
-        faseId: this.fase.id,
-        heroId: this.heroi.id,
-        estrelas: 0,
-        acertos: this.acertos,
-        erros: this.erros,
-        errosFatos: this.errosFatos,
-        temProxima: false,
-        moedasGanhas: this.moedasPartida,
-        novasConquistas,
-        ...extra,
-      });
-      this.scene.stop();
+    this.abrirResultado({
+      venceu: false,
+      bossRush: this.bossRush,
+      estrelas: 0,
+      temProxima: false,
+      moedasGanhas: this.moedasPartida,
+      novasConquistas,
+      ...extra,
     });
   }
 }

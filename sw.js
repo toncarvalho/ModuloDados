@@ -2,7 +2,7 @@
  * Service Worker — cache do app shell para o jogo funcionar 100% offline
  * e carregar rápido. Estratégia cache-first com fallback de rede.
  */
-const CACHE = "idolmath-v15";
+const CACHE = "idolmath-v16";
 const ASSETS = [
   "./",
   "index.html",
@@ -26,6 +26,10 @@ const ASSETS = [
   "js/scenes/GameScene.js",
   "js/scenes/TrainScene.js",
   "assets/icon.svg",
+  "assets/icon-192.png",
+  "assets/icon-512.png",
+  "assets/icon-maskable-512.png",
+  "assets/apple-touch-icon.png",
   "assets/herois/rubi.svg",
   "assets/herois/rubi-festa.svg",
   "assets/herois/rubi-inverno.svg",
@@ -50,7 +54,14 @@ self.addEventListener("install", (e) => {
       Promise.allSettled(ASSETS.map((u) => cache.add(u)))
     )
   );
-  self.skipWaiting();
+  // Sem skipWaiting() automático: a versão nova fica em "waiting" e a página
+  // mostra um banner "Atualizar". Ativar só quando o jogador tocar evita
+  // recarregar a página no meio de uma partida.
+});
+
+// A página pede a ativação (banner "Atualizar" tocado)
+self.addEventListener("message", (e) => {
+  if (e.data && e.data.tipo === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {

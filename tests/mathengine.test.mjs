@@ -43,6 +43,31 @@ for (let i = 0; i < 2000; i++) {
   ok(outro >= faixa.min && outro <= faixa.max, "o outro fator deve estar na faixa");
 }
 
+// gerarOpcoes com fatores: mantém as garantias E inclui distrator pedagógico
+// (linha vizinha: a×(b±1) ou (a±1)×b)
+for (let i = 0; i < 2000; i++) {
+  const a = MathEngine.inteiroAleatorio(1, 10);
+  const b = MathEngine.inteiroAleatorio(1, 10);
+  const resp = a * b;
+  const ops = MathEngine.gerarOpcoes(resp, a, b);
+  ok(ops.length === 4, "com fatores: opções devem ter 4 itens");
+  ok(new Set(ops).size === 4, "com fatores: opções não podem repetir");
+  ok(ops.includes(resp), "com fatores: opções devem conter a resposta");
+  ok(
+    ops.every((n) => n > 0),
+    "com fatores: opções devem ser positivas"
+  );
+  const vizinhos = [a * (b + 1), a * (b - 1), (a + 1) * b, (a - 1) * b].filter(
+    (n) => n > 0 && n !== resp
+  );
+  if (vizinhos.length) {
+    ok(
+      ops.some((n) => vizinhos.includes(n)),
+      `deve incluir um erro clássico de tabuada (${a}×${b})`
+    );
+  }
+}
+
 // repetição inteligente: um fato com peso alto deve aparecer mais
 const fatos = { "7x8": 8 }; // muito errado → deve repetir bastante
 let cont78 = 0;

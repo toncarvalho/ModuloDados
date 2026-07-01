@@ -4,6 +4,23 @@
  */
 const Util = (() => {
   return {
+    /** Converte cor numérica (0xff3ea5) em string CSS ("#ff3ea5"). */
+    corHex(cor) {
+      return "#" + cor.toString(16).padStart(6, "0");
+    },
+
+    /** true se o usuário prefere movimento reduzido (evita shake/flash). */
+    reduzirMovimento() {
+      try {
+        return !!(
+          window.matchMedia &&
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        );
+      } catch (e) {
+        return false;
+      }
+    },
+
     /** Vibra o aparelho (se suportado). */
     vibrar(ms) {
       if (navigator.vibrate) {

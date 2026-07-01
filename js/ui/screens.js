@@ -23,7 +23,7 @@ const UIScreens = (() => {
     return document.getElementById("ui-root");
   }
   function corHex(cor) {
-    return "#" + cor.toString(16).padStart(6, "0");
+    return Util.corHex(cor);
   }
   function esc(s) {
     return String(s).replace(/[&<>"]/g, (c) =>
@@ -44,6 +44,23 @@ const UIScreens = (() => {
     } catch (e) {
       return 0;
     }
+  }
+
+  // ----- toast (avisos rápidos: backup, falha ao salvar) -----
+  let toastTimer = null;
+  function toast(txt) {
+    let el = document.getElementById("ui-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "ui-toast";
+      el.setAttribute("role", "status");
+      el.setAttribute("aria-live", "polite");
+      document.body.appendChild(el);
+    }
+    el.textContent = txt;
+    el.classList.add("on");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("on"), 3200);
   }
 
   // ===================== AJUSTES =====================
@@ -71,6 +88,51 @@ const UIScreens = (() => {
     if (chave === "musica") AudioFX.sincronizarMusica();
     if (chave === "efeitos" && !atual) AudioFX.acerto();
     pintarAjuste(chave);
+  }
+
+  // ----- backup do progresso (exportar/importar arquivo JSON) -----
+  function exportarProgresso() {
+    const dados = Storage.exportarTudo();
+    const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `idolmath-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast("💾 Backup exportado! Guarde o arquivo num lugar seguro.");
+  }
+  function importarProgresso(arquivo) {
+    if (!arquivo) return;
+    arquivo
+      .text()
+      .then((txt) => {
+        let dados = null;
+        try {
+          dados = JSON.parse(txt);
+        } catch (e) {}
+        const lista = dados && dados.perfis && dados.perfis.perfis;
+        const n = Array.isArray(lista) ? lista.length : 0;
+        if (!n || dados.formato !== "idolmath-backup") {
+          toast("Arquivo de backup inválido 😕");
+          return;
+        }
+        const okConf = window.confirm(
+          `Importar backup com ${n} jogador(es)?\nOs jogadores atuais deste aparelho serão SUBSTITUÍDOS.`
+        );
+        if (!okConf) return;
+        const r = Storage.importarTudo(dados);
+        if (!r.ok) {
+          toast("Não foi possível importar o backup 😕");
+          return;
+        }
+        AudioFX.sincronizarMusica();
+        toast(`✅ ${r.perfis} jogador(es) restaurado(s)!`);
+        api.irInicio();
+      })
+      .catch(() => toast("Não foi possível ler o arquivo 😕"));
   }
 
   // ===================== CONQUISTAS =====================
@@ -526,6 +588,15 @@ const UIScreens = (() => {
       case "conquistas": return api.abrir("conquistas");
       case "loja": return api.abrir("loja");
       case "ajustes": return api.abrir("ajustes");
+      case "exportar": return exportarProgresso();
+      case "importar": {
+        const inp = document.getElementById("importar-arquivo");
+        if (inp) {
+          inp.value = "";
+          inp.click();
+        }
+        return;
+      }
       case "heroi": return api.abrir("heroi");
       case "perfis":
         modoPerfil = "selecao"; removendoPerfil = false; return api.abrir("perfis");
@@ -592,6 +663,24 @@ const UIScreens = (() => {
     init() {
       const r = root();
       if (!r) return;
+
+      // aviso quando o localStorage falhar ao salvar (cheio/bloqueado)
+      let ultimoAviso = 0;
+      Storage.onFalhaGravacao(() => {
+        const agora = Date.now();
+        if (agora - ultimoAviso < 30000) return; // no máx. 1 aviso a cada 30s
+        ultimoAviso = agora;
+        toast("⚠️ Não consegui salvar o progresso — exporte um backup em Ajustes!");
+      });
+
+      // seleção de arquivo do Importar (Ajustes)
+      const inpImportar = document.getElementById("importar-arquivo");
+      if (inpImportar) {
+        inpImportar.addEventListener("change", () => {
+          importarProgresso(inpImportar.files && inpImportar.files[0]);
+        });
+      }
+
       r.addEventListener("click", (ev) => {
         const alvo = ev.target.closest(
           "[data-cfg],[data-roupa],[data-fase],[data-treino],[data-heroi],[data-perfil],[data-novoheroi],[data-acao]"

@@ -108,8 +108,9 @@ class TrainScene extends Phaser.Scene {
       this.flashcard = null;
     }
     this.q = MathEngine.gerarPergunta(this.tab, JOGO.faixaFator, Storage.getFatos());
-    this.opcoes = MathEngine.gerarOpcoes(this.q.resposta);
+    this.opcoes = MathEngine.gerarOpcoes(this.q.resposta, this.q.a, this.q.b);
     this.txtPergunta.setText(`${this.q.texto} = ?`);
+    GameUI.anunciar(`Quanto é ${this.q.a} vezes ${this.q.b}?`);
     Util.falar(`${this.q.a} vezes ${this.q.b}`);
     GameUI.setRespostas(this.opcoes, (valor) => this.responder(valor));
     this.respondendo = false;
@@ -122,7 +123,7 @@ class TrainScene extends Phaser.Scene {
     Storage.registrarResposta(this.q.a, this.q.b, certo);
     if (certo) {
       this.acertos += 1;
-      Storage.addMoedas(1);
+      Storage.addMoedas(JOGO.moedas.treinoAcerto);
       GameUI.feedback(this.q.resposta, null);
       AudioFX.acerto();
       Util.vibrar(30);
@@ -130,6 +131,7 @@ class TrainScene extends Phaser.Scene {
     } else {
       this.erros += 1;
       GameUI.feedback(this.q.resposta, valor);
+      GameUI.anunciar(`Não foi dessa vez. ${this.q.texto} = ${this.q.resposta}.`);
       this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
       this.flashcard = Util.flashcardMultiplicacao(this, this.q.a, this.q.b, 0x36d96b);
       AudioFX.erro();

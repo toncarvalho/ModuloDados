@@ -105,6 +105,12 @@ const GameUI = (() => {
       if (resp) resp.hidden = true;
     },
 
+    /** Anuncia texto para leitores de tela (a conta é desenhada no canvas). */
+    anunciar(texto) {
+      const p = el("jogo-anuncio");
+      if (p) p.textContent = texto;
+    },
+
     // ----- pausa -----
     setPausaAcoes(acoes) {
       acoesPausa = acoes || {};
