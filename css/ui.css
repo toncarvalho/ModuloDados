@@ -879,3 +879,31 @@
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* ---------------- BANNER DE ATUALIZAÇÃO (PWA) ---------------- */
+#atualizar-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  max-width: min(94vw, 480px);
+  padding: 12px 18px;
+  border: 2px solid #ffd23e;
+  border-radius: 16px;
+  background: #15101f;
+  box-shadow: 0 0 22px rgba(255, 210, 62, 0.45);
+  color: #ffd23e;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: clamp(15px, 4vw, 19px);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#atualizar-banner[hidden] {
+  display: none;
+}
+#atualizar-banner:focus-visible {
+  outline: 3px solid #2ff7e6;
+  outline-offset: 2px;
+}

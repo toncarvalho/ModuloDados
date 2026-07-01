@@ -12,6 +12,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <title>Idol Math ⚡ Tabuada Kpop Metal</title>
   <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="css/ui.css" />
 </head>
@@ -167,20 +169,46 @@
   <!-- Bootstrap -->
   <script src="js/main.js"></script>
 
-  <!-- Service Worker (PWA offline) + atualização automática -->
+  <!-- Banner "nova versão" (aparece quando um SW novo fica em espera) -->
+  <button id="atualizar-banner" type="button" hidden>
+    🎉 Nova versão disponível — toque para atualizar
+  </button>
+
+  <!-- Service Worker (PWA offline) + atualização sob demanda -->
   <script>
     if ("serviceWorker" in navigator) {
-      // quando um SW novo assume o controle, recarrega 1x p/ pegar a versão nova
+      // quando o SW novo assume o controle (após o toque no banner), recarrega 1x
       let recarregou = false;
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (recarregou) return;
         recarregou = true;
         window.location.reload();
       });
+
+      // versão nova fica em "waiting" até o jogador tocar no banner — assim a
+      // atualização nunca recarrega a página no meio de uma partida
+      const banner = document.getElementById("atualizar-banner");
+      const oferecerAtualizacao = (reg) => {
+        if (!reg.waiting || !navigator.serviceWorker.controller || !banner) return;
+        banner.hidden = false;
+        banner.onclick = () => {
+          banner.hidden = true;
+          reg.waiting.postMessage({ tipo: "SKIP_WAITING" });
+        };
+      };
+
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("sw.js").then((reg) => {
           // procura atualização a cada carregamento
           reg.update();
+          oferecerAtualizacao(reg); // já pode haver uma versão esperando
+          reg.addEventListener("updatefound", () => {
+            const novo = reg.installing;
+            if (!novo) return;
+            novo.addEventListener("statechange", () => {
+              if (novo.state === "installed") oferecerAtualizacao(reg);
+            });
+          });
         }).catch(() => {});
       });
     }
