@@ -35,16 +35,6 @@ const UIScreens = (() => {
     if (r) return r.file;
     return getHeroi(heroId).file;
   }
-  function totalEstrelasDe(id) {
-    try {
-      const raw = localStorage.getItem(`idolmath.save.${id}`);
-      if (!raw) return 0;
-      const estrelas = (JSON.parse(raw) || {}).estrelas || {};
-      return Object.values(estrelas).reduce((s, n) => s + n, 0);
-    } catch (e) {
-      return 0;
-    }
-  }
 
   // ----- toast (avisos rápidos: backup, falha ao salvar) -----
   let toastTimer = null;
@@ -369,7 +359,7 @@ const UIScreens = (() => {
         <button class="perfil-card ${removendoPerfil ? "rem" : ""} ${meta.id === atualId ? "atual" : ""}" type="button" data-perfil="${meta.id}" style="--cor:${corHex(h.cor)}">
           <img class="pf-av" src="assets/herois/${h.file}.svg" alt="${esc(meta.nome)}">
           <span class="pf-nome">${esc(meta.nome)}</span>
-          <span class="pf-estr">⭐ ${totalEstrelasDe(meta.id)}</span>
+          <span class="pf-estr">⭐ ${Storage.totalEstrelasDe(meta.id)}</span>
           ${marca}
         </button>`;
     }).join("");

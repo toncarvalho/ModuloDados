@@ -133,3 +133,15 @@ const AudioFX = (() => {
     },
   };
 })();
+
+// Aba/app em segundo plano: para a música (o setInterval é estrangulado pelo
+// navegador e ficaria irregular, além de gastar bateria); retoma ao voltar.
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    AudioFX._musicaAntesDeOcultar = AudioFX.musicaTocando();
+    AudioFX.pararMusica();
+  } else if (AudioFX._musicaAntesDeOcultar) {
+    AudioFX._musicaAntesDeOcultar = false;
+    AudioFX.iniciarMusica();
+  }
+});

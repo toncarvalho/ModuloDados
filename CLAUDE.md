@@ -19,15 +19,19 @@ python3 -m http.server 8000
 # then open http://localhost:8000
 ```
 
-Run tests (plain Node, no test runner/framework):
+Run tests (plain Node, no test runner/framework — `package.json` exists only for the
+`test` script; the game itself has no npm dependency):
 
 ```bash
+npm test                          # all of them, or individually:
 node tests/mathengine.test.mjs
 node tests/storage.test.mjs
+node tests/regras.test.mjs        # scoring/stars/coins formulas
+node tests/sw.test.mjs            # sw.js ASSETS list consistency (see below)
 ```
 
 There is no build, lint, or typecheck step. CI (`.github/workflows/deploy-pages.yml`) runs
-both test files on every push/PR to `master`, then deploys the repo root to GitHub Pages on
+`npm test` on every push/PR to `master`, then deploys the repo root to GitHub Pages on
 push/dispatch (PRs only run tests).
 
 ### How the tests load buildless global scripts
@@ -81,8 +85,11 @@ code:
 
 - `MathEngine.js` — pure, dependency-free question/answer generation (`gerarPergunta`,
   `gerarOpcoes`, weighted "spaced repetition" selection from a `fatos` weight map,
-  pedagogical distractors using the classic "neighbor row" multiplication mistakes). This is
-  the one module both test files exercise directly; keep it side-effect-free.
+  pedagogical distractors using the classic "neighbor row" multiplication mistakes). Keep it
+  side-effect-free.
+- `Regras.js` — pure scoring formulas (points per hit, victory bonus, stars, victory coins),
+  extracted from `GameScene` so game-balance changes are testable (`tests/regras.test.mjs`).
+  Uses only the global `JOGO` config. Keep reward math here, not in scenes.
 - `Storage.js` — all persistence, via `localStorage`, under three key namespaces:
   `idolmath.perfis.v1` (multi-profile index — several local player profiles per device, not
   login/auth), `idolmath.save.<id>` (per-profile progress: stars, unlocked phases, coins,
@@ -102,7 +109,11 @@ per-phase mechanics. Content (which tables a phase drills, its theme/boss) lives
 
 ### PWA / offline
 
-`sw.js` is a service worker caching the app shell for offline play. `index.html` has inline
+`sw.js` is a service worker caching the app shell for offline play. Its `ASSETS` list is
+maintained by hand and `tests/sw.test.mjs` enforces it: every file referenced by
+`index.html` and every hero/outfit SVG (from `HEROIS`/`ROUPAS`) must be listed, and every
+listed file must exist. When adding a file to the app, add it to `ASSETS` too (and bump the
+`CACHE` version string), or that test fails. `index.html` has inline
 bootstrap logic that intentionally holds a new service-worker version in `waiting` state and
 only reloads the page after the player taps an "update available" banner — never mid-game.
 Phaser is vendored locally (`vendor/phaser.min.js`), not loaded from a CDN, so the app has no

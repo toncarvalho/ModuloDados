@@ -43,6 +43,10 @@ class GameScene extends Phaser.Scene {
     this.bossHpMax = 0;
     this.acabou = false;
     this.pausado = false;
+    // O Phaser REUTILIZA a instância da cena: sem este reset, sair pelo menu
+    // de pausa durante a janela de feedback deixaria respondendo=true preso,
+    // travando respostas e timer na próxima partida.
+    this.respondendo = false;
 
     // estatísticas da partida (relatório + repetição inteligente)
     this.acertos = 0;
@@ -394,8 +398,8 @@ class GameScene extends Phaser.Scene {
     this.moedasPartida += JOGO.moedas.acerto;
     this.combo += 1;
     this.maxCombo = Math.max(this.maxCombo, this.combo);
-    const base = this.isBoss ? JOGO.pontos.chefao : JOGO.pontos.base;
-    this.pontuacao += base * this.combo;
+    const ganho = Regras.pontosAcerto(this.isBoss, this.combo);
+    this.pontuacao += ganho;
 
     AudioFX.acerto();
     if (this.combo >= 3) AudioFX.combo();
@@ -411,7 +415,7 @@ class GameScene extends Phaser.Scene {
       yoyo: true,
       onComplete: () => this.inimigoSprite.setAngle(0),
     });
-    this.flutuarTexto(`+${base * this.combo}`, "#ffd23e");
+    this.flutuarTexto(`+${ganho}`, "#ffd23e");
     this.atualizarHUD();
 
     this.time.delayedCall(220, () => {
@@ -510,11 +514,6 @@ class GameScene extends Phaser.Scene {
   }
 
   // ---------- Fim ----------
-  calcularEstrelas() {
-    if (this.bossRush) return 3;
-    return Phaser.Math.Clamp(this.vidas, 1, 3);
-  }
-
   /** Abre a tela HTML de resultado com os dados comuns da partida + extras. */
   abrirResultado(extra) {
     this.time.delayedCall(700, () => {
@@ -545,7 +544,7 @@ class GameScene extends Phaser.Scene {
     AudioFX.vitoria();
     Util.vibrar([40, 30, 80]);
 
-    this.pontuacao += this.vidas * JOGO.pontos.bonusVida + this.maxCombo * JOGO.pontos.bonusCombo;
+    this.pontuacao += Regras.bonusVitoria(this.vidas, this.maxCombo);
     Storage.setMelhorPontuacao(this.pontuacao);
 
     // ---- Desafio do Dia: registra ofensiva + bônus, sem estrelas/fases ----
@@ -574,7 +573,7 @@ class GameScene extends Phaser.Scene {
       return;
     }
 
-    const estrelas = this.calcularEstrelas();
+    const estrelas = Regras.calcularEstrelas(this.vidas, this.bossRush);
     let temProxima = false;
     if (this.bossRush) {
       Storage.desbloquearBossRush();
@@ -587,7 +586,7 @@ class GameScene extends Phaser.Scene {
     }
 
     // moedas: acertos + bônus de vitória; conquistas
-    const moedas = this.moedasPartida + JOGO.moedas.bonusVitoria + estrelas * JOGO.moedas.porEstrela;
+    const moedas = Regras.moedasVitoria(this.moedasPartida, estrelas);
     Storage.addMoedas(moedas);
     Storage.registrarFimDePartida({
       maxCombo: this.maxCombo,

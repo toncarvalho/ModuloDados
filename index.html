@@ -145,32 +145,34 @@
   </div>
 
   <!-- Phaser 3 (vendorizado localmente, funciona offline) -->
-  <script src="vendor/phaser.min.js"></script>
+  <!-- defer: não bloqueia a renderização; a ordem dos scripts é preservada -->
+  <script defer src="vendor/phaser.min.js"></script>
 
   <!-- Data (puro, sem dependências — carrega antes do core) -->
-  <script src="js/data/fases.js"></script>
-  <script src="js/data/herois.js"></script>
-  <script src="js/data/roupas.js"></script>
-  <script src="js/data/conquistas.js"></script>
+  <script defer src="js/data/fases.js"></script>
+  <script defer src="js/data/herois.js"></script>
+  <script defer src="js/data/roupas.js"></script>
+  <script defer src="js/data/conquistas.js"></script>
 
-  <!-- Core (Storage usa MathEngine.chaveFato e JOGO.moedas) -->
-  <script src="js/core/MathEngine.js"></script>
-  <script src="js/core/Storage.js"></script>
-  <script src="js/core/Audio.js"></script>
-  <script src="js/core/UI.js"></script>
-  <script src="js/core/Util.js"></script>
+  <!-- Core (Storage usa MathEngine.chaveFato e JOGO.moedas; Regras usa JOGO) -->
+  <script defer src="js/core/MathEngine.js"></script>
+  <script defer src="js/core/Regras.js"></script>
+  <script defer src="js/core/Storage.js"></script>
+  <script defer src="js/core/Audio.js"></script>
+  <script defer src="js/core/UI.js"></script>
+  <script defer src="js/core/Util.js"></script>
 
   <!-- Cenas Phaser: só o gameplay (Boot gera texturas; navegação é HTML) -->
-  <script src="js/scenes/BootScene.js"></script>
-  <script src="js/scenes/GameScene.js"></script>
-  <script src="js/scenes/TrainScene.js"></script>
+  <script defer src="js/scenes/BootScene.js"></script>
+  <script defer src="js/scenes/GameScene.js"></script>
+  <script defer src="js/scenes/TrainScene.js"></script>
 
   <!-- Camada de UI em HTML -->
-  <script src="js/ui/screens.js"></script>
-  <script src="js/ui/gameui.js"></script>
+  <script defer src="js/ui/screens.js"></script>
+  <script defer src="js/ui/gameui.js"></script>
 
   <!-- Bootstrap -->
-  <script src="js/main.js"></script>
+  <script defer src="js/main.js"></script>
 
   <!-- Banner "nova versão" (aparece quando um SW novo fica em espera) -->
   <button id="atualizar-banner" type="button" hidden>

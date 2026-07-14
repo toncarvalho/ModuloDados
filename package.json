@@ -1,0 +1,8 @@
+{
+  "name": "idol-math",
+  "private": true,
+  "description": "Jogo de tabuada (Phaser 3, buildless). Este package.json existe só pela conveniência de `npm test` — o jogo não usa npm em runtime.",
+  "scripts": {
+    "test": "node tests/mathengine.test.mjs && node tests/storage.test.mjs && node tests/regras.test.mjs && node tests/sw.test.mjs"
+  }
+}

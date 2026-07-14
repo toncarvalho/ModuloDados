@@ -1,6 +1,6 @@
 /**
- * BootScene — gera todas as texturas via canvas/Graphics (sem assets externos):
- * fundo em gradiente, partícula de brilho, estrela e raio.
+ * BootScene — gera as texturas via canvas/Graphics (sem assets externos):
+ * fundo em gradiente e partícula de brilho.
  */
 class BootScene extends Phaser.Scene {
   constructor() {
@@ -33,8 +33,6 @@ class BootScene extends Phaser.Scene {
   create() {
     this.gerarFundo();
     this.gerarBrilho();
-    this.gerarEstrela();
-    this.gerarRaio();
     // Navegação é HTML (overlay): abre o menu (ou a criação de perfil).
     // A BootScene fica como cena "host" ociosa por baixo do overlay; o gameplay
     // (GameScene/TrainScene) é iniciado sob demanda pelo UIScreens.
@@ -93,53 +91,6 @@ class BootScene extends Phaser.Scene {
     g.addColorStop(1, "rgba(255,62,165,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, s, s);
-    tex.refresh();
-  }
-
-  /** Estrela de 5 pontas dourada. */
-  gerarEstrela() {
-    const s = 48;
-    const tex = this.textures.createCanvas("estrela", s, s);
-    const ctx = tex.getContext();
-    const cx = s / 2;
-    const cy = s / 2;
-    const spikes = 5;
-    const outer = s / 2 - 2;
-    const inner = outer * 0.45;
-    ctx.beginPath();
-    for (let i = 0; i < spikes * 2; i++) {
-      const r = i % 2 === 0 ? outer : inner;
-      const a = (Math.PI / spikes) * i - Math.PI / 2;
-      const x = cx + Math.cos(a) * r;
-      const y = cy + Math.sin(a) * r;
-      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = "#ffd23e";
-    ctx.shadowColor = "#ff3ea5";
-    ctx.shadowBlur = 8;
-    ctx.fill();
-    tex.refresh();
-  }
-
-  /** Raio (lightning bolt) — toque heavy metal. */
-  gerarRaio() {
-    const w = 40;
-    const h = 64;
-    const tex = this.textures.createCanvas("raio", w, h);
-    const ctx = tex.getContext();
-    ctx.beginPath();
-    ctx.moveTo(24, 2);
-    ctx.lineTo(8, 36);
-    ctx.lineTo(20, 36);
-    ctx.lineTo(14, 62);
-    ctx.lineTo(34, 24);
-    ctx.lineTo(22, 24);
-    ctx.closePath();
-    ctx.fillStyle = "#2ff7e6";
-    ctx.shadowColor = "#2ff7e6";
-    ctx.shadowBlur = 10;
-    ctx.fill();
     tex.refresh();
   }
 }

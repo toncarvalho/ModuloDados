@@ -282,6 +282,11 @@ const Storage = (() => {
     totalEstrelas() {
       return Object.values(state.estrelas).reduce((s, n) => s + n, 0);
     },
+    /** Total de estrelas de QUALQUER perfil (para a tela "Quem vai jogar?"). */
+    totalEstrelasDe(id) {
+      const save = carregarSave(id);
+      return Object.values(save.estrelas || {}).reduce((s, n) => s + n, 0);
+    },
 
     // ===================== REPETIÇÃO INTELIGENTE (fatos fracos) + ESTATÍSTICAS =====================
     registrarResposta(a, b, acertou) {

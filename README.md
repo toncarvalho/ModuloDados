@@ -85,6 +85,7 @@ js/data/roupas.js     # 🛍️ roupas da loja (por herói)
 js/data/conquistas.js # 🏅 conquistas (condição + recompensa)
 assets/herois/*.svg   # figuras dos personagens (DiceBear / Avataaars)
 js/core/MathEngine.js # geração de perguntas e alternativas (puro, testável)
+js/core/Regras.js     # fórmulas de pontos/estrelas/moedas (puro, testável)
 js/core/Audio.js      # música + efeitos sonoros (Web Audio)
 js/core/Storage.js    # perfis locais + progresso/recorde/estrelas (localStorage)
 js/core/UI.js         # textos/botões neon no canvas (Phaser)
@@ -92,7 +93,7 @@ js/core/Util.js       # vibração, voz, flashcard de multiplicação, cores
 js/scenes/*.js        # Boot (texturas), Game e Train — só o gameplay é Phaser
 js/ui/screens.js      # telas HTML: menu, perfis, fases, ajustes, loja, resultado…
 js/ui/gameui.js       # botões de resposta + pausa (HTML sobre o canvas)
-tests/*.mjs           # testes (node tests/mathengine.test.mjs / storage.test.mjs)
+tests/*.mjs           # testes (npm test, ou node tests/<arquivo>.test.mjs)
 assets/icon.svg       # ícone do app
 ```
 
