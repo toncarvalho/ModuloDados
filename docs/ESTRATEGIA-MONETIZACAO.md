@@ -187,3 +187,61 @@ fundação a fazer.
 
 Critério de "pronto para cobrar": itens 1–4 fechados + capturas de tela de loja
 que se sustentem ao lado dos concorrentes pagos da categoria.
+
+## 12. Mundos (expansão de conteúdo — PLANEJADO, ainda não implementado)
+
+> Decisão de produto (jul/2026, conversa a retomar): o jogo será organizado em
+> **mundos**, cada um cobrindo uma habilidade matemática. Nada disso está em
+> código ainda — esta seção registra o desenho acordado para a retomada.
+
+### Os três mundos
+
+| # | Mundo | Conteúdo | Estado |
+|---|-------|----------|--------|
+| 1 | 🌟 **Soma & Subtração** | Contas de +/− por faixa numérica (1º–2º ano) | a construir (o maior) |
+| 2 | 🎤 **Tabuada** | O jogo atual, fases 1–12 intactas | ✅ pronto |
+| 3 | ⚡ **Divisão** | Tabuada ao contrário: 56 ÷ 7 (4º ano) | a construir (barato) |
+
+A ordem 1→2→3 é a progressão pedagógica da criança — Soma & Subtração vem
+ANTES da tabuada na escola. Efeito comercial: amplia a faixa etária de ~8–10
+para **~6–10 anos** (irmãos mais novos jogam), dobrando o público-alvo do
+app pago.
+
+### Notas de implementação (para quando começar)
+
+- **Divisão é quase de graça**: o MathEngine já tem a tabela de fatos; a
+  pergunta vira `(a×b) ÷ a`, os distratores de "linha vizinha" seguem a mesma
+  lógica e a repetição inteligente pode COMPARTILHAR os fatos com a tabuada
+  (errar 56÷7 e errar 7×8 é o mesmo buraco de conhecimento — tratar junto).
+- **Soma & Subtração é o maior trabalho**: mecânica idêntica, mas a progressão
+  é por faixa/dificuldade (somas até 10 → até 20 → subtração sem "emprestar" →
+  com "emprestar" → até 100) e os distratores certos são outros (±1, ±2, erro
+  de dezena no vai-um). Exige `gerarPerguntaSoma` novo no MathEngine e fases
+  declarando faixa em vez de tabuada. Desenhar as fases exatas com cuidado.
+- **Estrutura**: array `MUNDOS` em `js/data/fases.js` (data-driven, como tudo);
+  menu de seleção de mundo antes da grade; grade de fases por mundo; tema
+  visual/cor de fundo por mundo (o `gerarFundo` da BootScene já aceita cores).
+- **Sequência de construção sugerida**: (a) estrutura de mundos com a Tabuada
+  dentro; (b) Divisão, validando a estrutura com conteúdo barato; (c) Soma &
+  Subtração por último.
+
+### Regras de segurança do save (INVIOLÁVEIS)
+
+- As fases atuais mantêm os ids `1–12` para sempre — nunca renumerar, ou o
+  progresso salvo dos jogadores (estrelas por `faseId`) é invalidado.
+- Mundos novos usam ids próprios (ex.: `s1..s10` para soma, `d1..d10` para
+  divisão).
+- Pesos de repetição inteligente ganham chave por operação (`7x8`, `7+8`,
+  `15-6`); os já salvos (`AxB`) continuam válidos como estão.
+- Decidir na retomada: o Desafio do Dia mistura mundos ou só os desbloqueados.
+
+### Impacto no modelo premium
+
+O corte demo/pago fica mais forte com mundos:
+
+- **Demo web grátis**: Mundo da Soma & Subtração completo (em vez de "fases
+  1–4 da tabuada").
+- **App pago**: os 3 mundos + Boss Rush + Desafio do Dia + loja.
+- Reposicionamento da ficha de loja: de "jogo de tabuada" para **"matemática
+  do fundamental (6–10 anos): soma, subtração, multiplicação e divisão"** —
+  sustenta melhor o preço de R$ 14,90 e diferencia dos apps de tabuada.
