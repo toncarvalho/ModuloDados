@@ -48,6 +48,12 @@ class GameScene extends Phaser.Scene {
     // de pausa durante a janela de feedback deixaria respondendo=true preso,
     // travando respostas e timer na próxima partida.
     this.respondendo = false;
+    // Idem para o relógio e os tweens da cena: o Phaser (3.80) NÃO reseta
+    // Clock.paused/TweenManager.paused no restart. Sair pelo menu de pausa
+    // deixava ambos pausados; na partida seguinte o delayedCall do feedback
+    // nunca disparava → 1ª resposta "não computada" e jogo travado.
+    this.time.paused = false;
+    this.tweens.resumeAll();
 
     // estatísticas da partida (relatório + repetição inteligente)
     this.acertos = 0;
@@ -75,11 +81,13 @@ class GameScene extends Phaser.Scene {
     GameUI.setPausaAcoes({
       continuar: () => this.retomar(),
       fases: () => {
+        this.retomar(); // despausa relógio/tweens ANTES do stop (ver init)
         GameUI.sair();
         UIScreens.abrir("grade");
         this.scene.stop();
       },
       menu: () => {
+        this.retomar(); // despausa relógio/tweens ANTES do stop (ver init)
         GameUI.sair();
         UIScreens.abrir("menu");
         this.scene.stop();
