@@ -10,8 +10,8 @@ import { dirname, join } from "node:path";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const codeFases = readFileSync(join(__dirname, "../js/data/fases.js"), "utf8");
 const codeRegras = readFileSync(join(__dirname, "../js/core/Regras.js"), "utf8");
-const { Regras, JOGO } = new Function(
-  codeFases + "\n" + codeRegras + "\nreturn { Regras, JOGO };"
+const { Regras, JOGO, FASES, MECANICAS_CHEFAO } = new Function(
+  codeFases + "\n" + codeRegras + "\nreturn { Regras, JOGO, FASES, MECANICAS_CHEFAO };"
 )();
 
 let falhas = 0;
@@ -63,6 +63,43 @@ ok(
 ok(
   Regras.moedasVitoria(10, 3) > Regras.moedasVitoria(10, 1),
   "mais estrelas → mais moedas"
+);
+
+// hpChefao: só "blindado" reduz o HP (exige acertos seguidos p/ dano)
+ok(Regras.hpChefao(null) === JOGO.bossHp, "chefão sem mecânica usa bossHp cheio");
+ok(Regras.hpChefao("tempoCurto") === JOGO.bossHp, "tempoCurto não muda o HP");
+ok(Regras.hpChefao("embaralha") === JOGO.bossHp, "embaralha não muda o HP");
+ok(
+  Regras.hpChefao("blindado") ===
+    Math.max(1, Math.round(JOGO.bossHp * JOGO.mecanicas.blindadoFatorHp)),
+  "blindado reduz o HP pelo fator configurado"
+);
+ok(Regras.hpChefao("blindado") >= 1, "HP do blindado nunca fica abaixo de 1");
+
+// powerupPorCombo: escudo/raio nos múltiplos configurados, máx. 1 guardado
+const pe = JOGO.powerups.comboEscudo;
+const pr = JOGO.powerups.comboRaio;
+ok(Regras.powerupPorCombo(0, false, false) === null, "combo 0 não dá power-up");
+ok(Regras.powerupPorCombo(pe, false, false) === "escudo", "combo do escudo dá 🛡️");
+ok(Regras.powerupPorCombo(pe, true, false) === null, "escudo não acumula (máx. 1)");
+ok(Regras.powerupPorCombo(pr, false, false) === "raio", "combo do raio dá ⚡");
+ok(
+  Regras.powerupPorCombo(pr, false, true) === "escudo",
+  "com ⚡ já guardado, múltiplo do raio (também do escudo) cai para 🛡️"
+);
+ok(Regras.powerupPorCombo(pr, true, true) === null, "com ambos guardados não acumula nada");
+ok(Regras.powerupPorCombo(pr, true, false) === "raio", "no múltiplo do raio, ⚡ tem prioridade");
+ok(Regras.powerupPorCombo(pe + 1, false, false) === null, "fora dos múltiplos não dá nada");
+ok(Regras.powerupPorCombo(pr * 2, false, false) === "raio", "múltiplos seguintes também premiam");
+
+// FASES: toda mecânica declarada nos chefões existe no catálogo
+ok(
+  FASES.every((f) => !f.boss.mecanica || MECANICAS_CHEFAO[f.boss.mecanica]),
+  "boss.mecanica de toda fase existe em MECANICAS_CHEFAO"
+);
+ok(
+  FASES.some((f) => f.boss.mecanica),
+  "há chefões com mecânica especial declarada"
 );
 
 if (falhas) {

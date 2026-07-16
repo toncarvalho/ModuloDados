@@ -55,6 +55,15 @@ class GameScene extends Phaser.Scene {
     this.time.paused = false;
     this.tweens.resumeAll();
 
+    // power-ups de combo (🛡️ bloqueia a perda de 1 vida; ⚡ próximo acerto vale 2)
+    this.escudo = false;
+    this.raioX2 = false;
+    // mecânica especial do chefão atual ({ id, icone, ... } — ver fases.js) e
+    // progresso da guarda do chefão "blindado" (acertos seguidos acumulados)
+    this.mec = null;
+    this.guardaChefao = 0;
+    this._evEmbaralha = null; // delayedCall pendente do chefão "embaralha"
+
     // estatísticas da partida (relatório + repetição inteligente)
     this.acertos = 0;
     this.erros = 0;
@@ -138,6 +147,11 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(1, 0);
 
+    // power-ups guardados (🛡️/⚡), abaixo do combo
+    this.txtPower = this.add
+      .text(GAME_WIDTH - 30, 132, "", { fontSize: "38px" })
+      .setOrigin(1, 0);
+
     // (o herói aparece em cena no palco — criarHeroi; a pausa é HTML — GameUI)
     this.atualizarHUD();
   }
@@ -146,6 +160,7 @@ class GameScene extends Phaser.Scene {
     this.txtVidas.setText("❤️".repeat(this.vidas) || "💔");
     this.txtPontos.setText(`${this.pontuacao}`);
     this.txtCombo.setText(this.combo > 1 ? `Combo x${this.combo}` : "");
+    this.txtPower.setText(`${this.escudo ? "🛡️" : ""}${this.raioX2 ? "⚡" : ""}`);
   }
 
   // ---------- Palco / inimigo ----------
@@ -192,6 +207,12 @@ class GameScene extends Phaser.Scene {
 
     this.hpBarBg = this.add.graphics();
     this.hpBar = this.add.graphics();
+
+    // guarda do chefão "blindado" (🛡️ que faltam p/ causar dano), ao lado da barra de HP
+    this.txtGuarda = this.add
+      .text(cx + 240, 534, "", { fontSize: "26px" })
+      .setOrigin(0, 0.5)
+      .setVisible(false);
 
     this.txtPergunta = this.add
       .text(cx, 620, "", {
@@ -393,12 +414,15 @@ class GameScene extends Phaser.Scene {
   iniciarChefao() {
     this.isBoss = true;
     const boss = this.fase.boss;
-    this.bossHpMax = JOGO.bossHp;
+    this.mec = getMecanicaChefao(this.fase);
+    this.guardaChefao = 0;
+    this.txtGuarda.setVisible(false);
+    this.bossHpMax = Regras.hpChefao(this.mec && this.mec.id);
     this.bossHp = this.bossHpMax;
 
     this.cameras.main.setBackgroundColor(0x0d0d12);
     this.mostrarInimigo(this.chaveBoss(), boss.emoji, 270, 190);
-    this.txtInimigoNome.setText(`⚠️ ${boss.nome} ⚠️`);
+    this.txtInimigoNome.setText(`⚠️ ${boss.nome}${this.mec ? " " + this.mec.icone : ""} ⚠️`);
     this.txtFase.setText(this.tituloFase());
 
     const banner = this.add
@@ -412,6 +436,22 @@ class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(100);
     banner.setShadow(0, 0, "#ff3ea5", 20, true, true);
+
+    // apresenta a mecânica especial (a criança precisa saber a "regra" do chefão)
+    let bannerMec = null;
+    if (this.mec) {
+      bannerMec = this.add
+        .text(GAME_WIDTH / 2, 550, `${this.mec.icone} ${this.mec.nome}: ${this.mec.desc}`, {
+          fontFamily: UI.FONT,
+          fontSize: "30px",
+          fontStyle: "bold",
+          color: "#2ff7e6",
+          align: "center",
+        })
+        .setOrigin(0.5)
+        .setDepth(100);
+    }
+    GameUI.anunciar(`Chefão: ${boss.nome}.${this.mec ? ` ${this.mec.desc}` : ""}`);
     if (!Util.reduzirMovimento()) this.cameras.main.shake(400, 0.01);
     AudioFX.golpe();
 
@@ -420,9 +460,23 @@ class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(1400, () => {
       banner.destroy();
+      if (bannerMec) bannerMec.destroy();
       this.desenharHpBar();
+      this.atualizarGuarda();
       this.novaPergunta();
     });
+  }
+
+  /** Indicador da guarda do chefão "blindado" (🛡️ restantes p/ causar dano). */
+  atualizarGuarda() {
+    const blindado =
+      this.isBoss && !this.acabou && this.mec && this.mec.id === "blindado";
+    if (blindado) {
+      const falta = Math.max(0, JOGO.mecanicas.blindadoGolpes - this.guardaChefao);
+      this.txtGuarda.setText("🛡️".repeat(falta)).setVisible(true);
+    } else {
+      this.txtGuarda.setVisible(false);
+    }
   }
 
   // ---------- Perguntas ----------
@@ -446,10 +500,46 @@ class GameScene extends Phaser.Scene {
     // botões de resposta em HTML (camada GameUI) — toque nativo confiável
     GameUI.setRespostas(this.opcoes, (valor) => this.responder(valor));
     this.iniciarTimer();
+
+    // chefão "embaralha": no meio da pergunta as respostas trocam de lugar
+    this.cancelarEmbaralho();
+    if (this.isBoss && this.mec && this.mec.id === "embaralha") {
+      this._evEmbaralha = this.time.delayedCall(JOGO.mecanicas.embaralhaMs, () =>
+        this.embaralharOpcoes()
+      );
+    }
+  }
+
+  cancelarEmbaralho() {
+    if (this._evEmbaralha) {
+      this._evEmbaralha.remove(false);
+      this._evEmbaralha = null;
+    }
+  }
+
+  /** Golpe do chefão "embaralha": as mesmas opções trocam de lugar (1x por pergunta). */
+  embaralharOpcoes() {
+    this._evEmbaralha = null;
+    if (this.acabou || this.respondendo || this.pausado) return;
+    this.opcoes = MathEngine.embaralhar(this.opcoes);
+    GameUI.setRespostas(this.opcoes, (valor) => this.responder(valor));
+    GameUI.anunciar("O chefão embaralhou as respostas!");
+    this.flutuarTexto("🌀 Embaralhou!", "#2ff7e6");
+    AudioFX.golpe();
+    if (!Util.reduzirMovimento()) {
+      this.tweens.add({
+        targets: this.inimigoCont,
+        angle: 360,
+        duration: 350,
+        ease: "Quad.out",
+        onComplete: () => this.inimigoCont.setAngle(0),
+      });
+    }
   }
 
   limparBotoes() {
     GameUI.esconderRespostas();
+    this.cancelarEmbaralho();
     this.pararTimer();
     this.timerBarBg.setVisible(false);
     this.timerFill.setVisible(false);
@@ -458,7 +548,11 @@ class GameScene extends Phaser.Scene {
   // ---------- Timer ----------
   iniciarTimer() {
     this.pararTimer();
-    const segundos = Storage.getConfig().timer ? JOGO.tempoResposta : null;
+    let segundos = Storage.getConfig().timer ? JOGO.tempoResposta : null;
+    // chefão "apressado": menos tempo por pergunta (só se o timer estiver ligado)
+    if (segundos && this.isBoss && this.mec && this.mec.id === "tempoCurto") {
+      segundos = JOGO.mecanicas.tempoCurtoSeg;
+    }
     if (!segundos) {
       this.timerBarBg.setVisible(false);
       this.timerFill.setVisible(false);
@@ -492,12 +586,14 @@ class GameScene extends Phaser.Scene {
 
   tempoEsgotado() {
     if (this.acabou) return;
+    this.cancelarEmbaralho();
     this.errar(null);
   }
 
   // ---------- Respostas ----------
   responder(valor) {
     if (this.acabou || this.respondendo || this.pausado) return;
+    this.cancelarEmbaralho();
     this.pararTimer();
     const certo = valor === this.q.resposta;
     Storage.registrarResposta(this.q.a, this.q.b, certo);
@@ -515,6 +611,24 @@ class GameScene extends Phaser.Scene {
     const ganho = Regras.pontosAcerto(this.isBoss, this.combo);
     this.pontuacao += ganho;
 
+    // ⚡ golpe duplo guardado: este acerto vale 2 (dano no chefão / inimigos)
+    const dano = this.raioX2 ? 2 : 1;
+    if (this.raioX2) {
+      this.raioX2 = false;
+      this.time.delayedCall(240, () => this.flutuarTexto("⚡ Golpe duplo!", "#ffd23e"));
+    }
+    // power-up ganho ao atingir o combo (Regras.powerupPorCombo)
+    const pu = Regras.powerupPorCombo(this.combo, this.escudo, this.raioX2);
+    if (pu === "escudo") {
+      this.escudo = true;
+      GameUI.anunciar("Você ganhou um escudo!");
+      this.time.delayedCall(240, () => this.flutuarTexto("🛡️ Escudo!", "#9ad8ff"));
+    } else if (pu === "raio") {
+      this.raioX2 = true;
+      GameUI.anunciar("Você ganhou um golpe duplo!");
+      this.time.delayedCall(240, () => this.flutuarTexto("⚡ Golpe duplo pronto!", "#ffd23e"));
+    }
+
     AudioFX.acerto();
     if (this.combo >= 3) AudioFX.combo();
     AudioFX.golpe();
@@ -527,12 +641,25 @@ class GameScene extends Phaser.Scene {
     this.time.delayedCall(320, () => {
       this.respondendo = false;
       if (this.isBoss) {
-        this.bossHp -= 1;
+        let dmg = dano;
+        // chefão "blindado": só acertos seguidos suficientes causam 1 de dano
+        if (this.mec && this.mec.id === "blindado") {
+          this.guardaChefao += dano;
+          if (this.guardaChefao >= JOGO.mecanicas.blindadoGolpes) {
+            this.guardaChefao = 0;
+            dmg = 1;
+          } else {
+            dmg = 0;
+            this.flutuarTexto("🛡️ Guarda rachando!", "#9ad8ff");
+          }
+          this.atualizarGuarda();
+        }
+        this.bossHp -= dmg;
         this.desenharHpBar();
         if (this.bossHp <= 0) this.chefaoDerrotado();
         else this.novaPergunta();
       } else {
-        this.inimigosRestantes -= 1;
+        this.inimigosRestantes -= dano;
         this.proximoInimigo(false);
       }
     });
@@ -543,21 +670,39 @@ class GameScene extends Phaser.Scene {
     this.erros += 1;
     this.errosFatos.push(this.q.texto);
     this.combo = 0;
-    this.vidas -= 1;
+    // chefão "blindado": errar zera o progresso da guarda
+    if (this.isBoss && this.mec && this.mec.id === "blindado" && this.guardaChefao) {
+      this.guardaChefao = 0;
+      this.atualizarGuarda();
+    }
+    // chefão "curandeiro": recupera HP a cada erro
+    if (this.isBoss && this.mec && this.mec.id === "curandeiro" && this.bossHp < this.bossHpMax) {
+      this.bossHp = Math.min(this.bossHpMax, this.bossHp + JOGO.mecanicas.curaPorErro);
+      this.desenharHpBar();
+      this.time.delayedCall(280, () => this.flutuarTexto("💖 Chefão se curou!", "#ff8a3d"));
+    }
+    // 🛡️ escudo guardado bloqueia a perda desta vida (o erro ainda conta:
+    // combo zera, entra no relatório e na repetição inteligente)
+    const protegido = this.escudo;
+    if (protegido) this.escudo = false;
+    else this.vidas -= 1;
     AudioFX.erro();
     Util.vibrar([60, 40, 60]);
     this.animarGolpeRecebido();
-    if (!Util.reduzirMovimento()) {
+    if (!protegido && !Util.reduzirMovimento()) {
       this.cameras.main.shake(250, 0.012);
       this.cameras.main.flash(150, 120, 0, 0);
     }
 
     // destaca a resposta correta (verde) e a tocada errada (vermelha) + dica
     GameUI.feedback(this.q.resposta, valorErrado);
-    GameUI.anunciar(`Não foi dessa vez. ${this.q.texto} = ${this.q.resposta}.`);
+    GameUI.anunciar(
+      `Não foi dessa vez. ${this.q.texto} = ${this.q.resposta}.` +
+        (protegido ? " Seu escudo te protegeu!" : "")
+    );
     this.txtDica.setText(`${this.q.texto} = ${this.q.resposta}`).setVisible(true);
     this.flashcard = Util.flashcardMultiplicacao(this, this.q.a, this.q.b, 0x36d96b);
-    this.flutuarTexto("-1 ❤️", "#ff5050");
+    this.flutuarTexto(protegido ? "🛡️ Escudo protegeu!" : "-1 ❤️", protegido ? "#9ad8ff" : "#ff5050");
     this.atualizarHUD();
 
     this.time.delayedCall(1500, () => {
@@ -648,6 +793,7 @@ class GameScene extends Phaser.Scene {
     this.acabou = true;
     this.pararTimer();
     this.limparBotoes();
+    this.atualizarGuarda();
     AudioFX.vitoria();
     Util.vibrar([40, 30, 80]);
 
@@ -729,6 +875,7 @@ class GameScene extends Phaser.Scene {
     this.acabou = true;
     this.pararTimer();
     this.limparBotoes();
+    this.atualizarGuarda();
     AudioFX.derrota();
     Storage.setMelhorPontuacao(this.pontuacao);
 

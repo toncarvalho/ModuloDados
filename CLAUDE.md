@@ -71,11 +71,16 @@ compensate for mobile browsers' dynamic viewport/address bar).
 Game content is separated from mechanics so new content doesn't require touching engine
 code:
 - `js/data/fases.js` — the `JOGO` config object (constant mechanics: timer, factor range,
-  boss HP, points, coin rewards) and the `FASES` array (12 phases; each just declares which
+  boss HP, points, coin rewards, boss-mechanic tuning in `JOGO.mecanicas`, combo power-up
+  thresholds in `JOGO.powerups`) and the `FASES` array (12 phases; each just declares which
   `tabuadas` — times-tables — it focuses on, theme color, enemy/boss emoji). Difficulty comes
-  entirely from which tables a phase targets, not from mechanics — those stay constant across
-  phases. Adding a phase = pushing an object onto `FASES` (see README "Como adicionar fases"
-  for the exact shape); it auto-appears in the phase grid/progression.
+  from which tables a phase targets; base mechanics stay constant across phases, with one
+  exception: each boss may declare an optional special mechanic via `boss.mecanica`
+  (`"tempoCurto" | "embaralha" | "blindado" | "curandeiro"` — catalog `MECANICAS_CHEFAO`
+  in the same file, resolved via `getMecanicaChefao(fase)`; GameScene implements the
+  behaviors, Regras.hpChefao adjusts boss HP). Adding a phase = pushing an object onto
+  `FASES` (see README "Como adicionar fases" for the exact shape); it auto-appears in the
+  phase grid/progression.
 - `js/data/herois.js` — playable character cosmetic definitions (figure/color/name).
 - `js/data/roupas.js` — shop outfits per hero.
 - `js/data/conquistas.js` — achievements as `{ id, cond(snapshot), recompensa }`; `cond` is

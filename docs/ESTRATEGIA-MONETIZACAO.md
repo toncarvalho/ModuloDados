@@ -109,7 +109,7 @@ A grande vantagem: **o jogo não coleta dado nenhum** — tudo é `localStorage`
 ## 8. Roadmap
 
 **Fase 0 — Preparação (1–2 semanas)**
-- [ ] Corrigir o deploy do GitHub Pages (workflow com falha) — a web/demo depende disso.
+- [x] Corrigir o deploy do GitHub Pages — funcionando (deploys de jul/2026 publicados com sucesso).
 - [ ] Criar conta Google Play Developer (US$ 25) + perfil de pagamentos (merchant).
 - [ ] Escrever e publicar a política de privacidade.
 - [ ] Ícones PNG finais e capturas de tela de loja (retrato, com legendas).
@@ -119,7 +119,7 @@ A grande vantagem: **o jogo não coleta dado nenhum** — tudo é `localStorage`
       no lugar dos emojis — inclui os tiles da grade de fases.
 - [x] Heroína visível no palco, com animação de ataque (raio) e de golpe recebido.
 - [ ] Música real (2–3 loops licenciados), mantendo o synth como fallback.
-- [ ] Mecânica especial por chefão + power-ups de combo (ver §11).
+- [x] Mecânica especial por chefão + power-ups de combo (ver §11).
 - [ ] Implementar flag `DEMO` e gating de conteúdo na web.
 - [ ] Empacotar com Capacitor (Android), assinar, testes internos.
 - [ ] Ficha da loja (PT-BR), questionário IARC, formulário Famílias.
@@ -176,10 +176,12 @@ fundação a fazer.
    (assets/inimigos/), com fallback para emoji se um arquivo faltar.
 2. ~~A fantasia "idol de palco" não aparecia na tela~~ → **resolvido**: a heroína
    agora está no palco, ataca com um raio a cada acerto e reage ao ser atingida.
-3. Monotonia nas fases 5–12: a mecânica é constante; um chefão é igual ao inimigo
-   comum com mais HP. **Plano**: 1 mecânica especial por chefão (encurtar timer,
-   embaralhar opções, exigir 2 acertos seguidos) e 1–2 power-ups ganhos por combo —
-   cabe na arquitetura data-driven de `js/data/fases.js`.
+3. ~~Monotonia nas fases 5–12: a mecânica é constante; um chefão é igual ao inimigo
+   comum com mais HP.~~ → **resolvido**: 4 mecânicas especiais de chefão
+   (⏱️ Apressado, 🌀 Trapaceiro, 🛡️ Blindado, 💖 Curandeiro) distribuídas nas fases
+   3–12 via `boss.mecanica` (catálogo `MECANICAS_CHEFAO` em `js/data/fases.js`),
+   mais 2 power-ups por combo: 🛡️ escudo (x4, bloqueia a perda de 1 vida) e
+   ⚡ golpe duplo (x8, próximo acerto vale 2).
 4. Áudio 100% sintetizado (Web Audio): funcional, mas o tema kpop pede música
    marcante. **Plano**: 2–3 loops licenciados; synth vira fallback.
 

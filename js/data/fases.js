@@ -32,7 +32,39 @@ const JOGO = {
     desafioPorDia: 5, // extra por dia de ofensiva...
     desafioTetoDias: 7, // ...até este teto de dias
   },
+  mecanicas: {
+    // números das mecânicas especiais de chefão (QUAL mecânica cada chefão usa
+    // é conteúdo → boss.mecanica na fase; o catálogo é MECANICAS_CHEFAO abaixo)
+    tempoCurtoSeg: 6, // "tempoCurto": segundos por pergunta no chefão (< tempoResposta)
+    embaralhaMs: 3500, // "embaralha": tempo até o chefão embaralhar as respostas
+    blindadoGolpes: 2, // "blindado": acertos seguidos para causar 1 de dano...
+    blindadoFatorHp: 0.5, // ...com HP reduzido para compensar (bossHp × fator)
+    curaPorErro: 1, // "curandeiro": HP que o chefão recupera a cada erro
+  },
+  powerups: {
+    comboEscudo: 4, // a cada combo múltiplo disto ganha 🛡️ escudo (máx. 1 guardado)
+    comboRaio: 8, // a cada combo múltiplo disto ganha ⚡ golpe duplo (máx. 1)
+  },
 };
+
+/**
+ * Catálogo das mecânicas especiais de chefão (id → apresentação no banner/HUD).
+ * Cada fase declara a sua em `boss.mecanica` (opcional — chefão sem mecânica é
+ * o "baunilha" das primeiras fases). Os números ficam em JOGO.mecanicas.
+ */
+const MECANICAS_CHEFAO = {
+  tempoCurto: { icone: "⏱️", nome: "Apressado", desc: "Menos tempo por pergunta!" },
+  embaralha: { icone: "🌀", nome: "Trapaceiro", desc: "Embaralha as respostas!" },
+  blindado: { icone: "🛡️", nome: "Blindado", desc: "Só 2 acertos seguidos causam dano!" },
+  curandeiro: { icone: "💖", nome: "Curandeiro", desc: "Se cura quando você erra!" },
+};
+
+/** Mecânica do chefão de uma fase ({ id, icone, nome, desc }) ou null. */
+function getMecanicaChefao(fase) {
+  const id = fase && fase.boss && fase.boss.mecanica;
+  const m = id ? MECANICAS_CHEFAO[id] : null;
+  return m ? Object.assign({ id }, m) : null;
+}
 
 /**
  * 12 fases. Cada inimigo comum precisa de 1 acerto; o chefão tem JOGO.bossHp.
@@ -64,7 +96,7 @@ const FASES = [
     tabuadas: [3],
     corTema: 0xff3ea5,
     inimigoEmoji: "🎧",
-    boss: { nome: "DJ Tríade", emoji: "🎧", frase: "Sente o ritmo do três!" },
+    boss: { nome: "DJ Tríade", emoji: "🎧", frase: "Sente o ritmo do três!", mecanica: "tempoCurto" },
   },
   {
     id: 4,
@@ -73,7 +105,7 @@ const FASES = [
     tabuadas: [4],
     corTema: 0xff5a3e,
     inimigoEmoji: "🥁",
-    boss: { nome: "Quarteto do Caos", emoji: "🥁", frase: "Quatro batidas, sem erro!" },
+    boss: { nome: "Quarteto do Caos", emoji: "🥁", frase: "Quatro batidas, sem erro!", mecanica: "embaralha" },
   },
   {
     id: 5,
@@ -82,7 +114,7 @@ const FASES = [
     tabuadas: [5],
     corTema: 0xffd23e,
     inimigoEmoji: "⭐",
-    boss: { nome: "Penta Diva", emoji: "⭐", frase: "Cinco estrelas no palco!" },
+    boss: { nome: "Penta Diva", emoji: "⭐", frase: "Cinco estrelas no palco!", mecanica: "curandeiro" },
   },
   {
     id: 6,
@@ -91,7 +123,7 @@ const FASES = [
     tabuadas: [6],
     corTema: 0x2ff7e6,
     inimigoEmoji: "🦇",
-    boss: { nome: "Sexteto Sombrio", emoji: "🦇", frase: "Seis sombras te cercam!" },
+    boss: { nome: "Sexteto Sombrio", emoji: "🦇", frase: "Seis sombras te cercam!", mecanica: "blindado" },
   },
   {
     id: 7,
@@ -100,7 +132,7 @@ const FASES = [
     tabuadas: [7],
     corTema: 0x3ea5ff,
     inimigoEmoji: "🌩️",
-    boss: { nome: "Sete Trovões", emoji: "🌩️", frase: "O sete ribomba!" },
+    boss: { nome: "Sete Trovões", emoji: "🌩️", frase: "O sete ribomba!", mecanica: "tempoCurto" },
   },
   {
     id: 8,
@@ -109,7 +141,7 @@ const FASES = [
     tabuadas: [8],
     corTema: 0x7b2ff7,
     inimigoEmoji: "🕷️",
-    boss: { nome: "Aranha do Oito", emoji: "🕷️", frase: "Caia na minha teia!" },
+    boss: { nome: "Aranha do Oito", emoji: "🕷️", frase: "Caia na minha teia!", mecanica: "embaralha" },
   },
   {
     id: 9,
@@ -118,7 +150,7 @@ const FASES = [
     tabuadas: [9],
     corTema: 0xff3ea5,
     inimigoEmoji: "🐈‍⬛",
-    boss: { nome: "Nove Vidas", emoji: "🐈‍⬛", frase: "Nenhuma das minhas vidas perde!" },
+    boss: { nome: "Nove Vidas", emoji: "🐈‍⬛", frase: "Nenhuma das minhas vidas perde!", mecanica: "curandeiro" },
   },
   {
     id: 10,
@@ -127,7 +159,7 @@ const FASES = [
     tabuadas: [10],
     corTema: 0xffd23e,
     inimigoEmoji: "👑",
-    boss: { nome: "Deca Rainha", emoji: "👑", frase: "O dez é meu reino!" },
+    boss: { nome: "Deca Rainha", emoji: "👑", frase: "O dez é meu reino!", mecanica: "blindado" },
   },
   {
     id: 11,
@@ -136,7 +168,7 @@ const FASES = [
     tabuadas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     corTema: 0xff5a3e,
     inimigoEmoji: "🌀",
-    boss: { nome: "Caos Total", emoji: "🌀", frase: "Tudo ao mesmo tempo agora!" },
+    boss: { nome: "Caos Total", emoji: "🌀", frase: "Tudo ao mesmo tempo agora!", mecanica: "embaralha" },
   },
   {
     id: 12,
@@ -145,7 +177,7 @@ const FASES = [
     tabuadas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
     corTema: 0xffd23e,
     inimigoEmoji: "🤘",
-    boss: { nome: "Imperatriz Sônica", emoji: "👑", frase: "Só uma lenda me vence. Prove!" },
+    boss: { nome: "Imperatriz Sônica", emoji: "👑", frase: "Só uma lenda me vence. Prove!", mecanica: "blindado" },
   },
 ];
 

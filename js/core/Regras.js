@@ -26,5 +26,25 @@ const Regras = (() => {
     moedasVitoria(moedasPartida, estrelas) {
       return moedasPartida + JOGO.moedas.bonusVitoria + estrelas * JOGO.moedas.porEstrela;
     },
+
+    /** HP do chefão conforme a mecânica ("blindado" tem menos HP — exige acertos seguidos). */
+    hpChefao(mecanicaId) {
+      if (mecanicaId === "blindado") {
+        return Math.max(1, Math.round(JOGO.bossHp * JOGO.mecanicas.blindadoFatorHp));
+      }
+      return JOGO.bossHp;
+    },
+
+    /**
+     * Power-up ganho AO ATINGIR este combo: "raio" (⚡ golpe duplo) nos múltiplos
+     * de comboRaio, senão "escudo" (🛡️) nos múltiplos de comboEscudo. Máximo de
+     * 1 guardado de cada; null se nenhum.
+     */
+    powerupPorCombo(combo, temEscudo, temRaio) {
+      const p = JOGO.powerups;
+      if (combo > 0 && combo % p.comboRaio === 0 && !temRaio) return "raio";
+      if (combo > 0 && combo % p.comboEscudo === 0 && !temEscudo) return "escudo";
+      return null;
+    },
   };
 })();

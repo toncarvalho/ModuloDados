@@ -20,7 +20,12 @@ resposta certa para atacar, encadeie **combos**, não perca suas **vidas** ❤�
 - 🗺️ **12 fases** em progressão por tabuada: 1–2 → 1–3 → 3 → 4 → 5 → 6 → 7 → 8 → 9 → 10,
   e as **duas últimas misturam todas** (1–10). A dificuldade vem da tabuada da fase.
 - 🔓 Cada fase **desbloqueia a próxima** ao ser vencida (progresso salvo).
-- 👑 **Chefões** temáticos com barra de HP no fim de cada fase.
+- 👑 **Chefões** temáticos com barra de HP no fim de cada fase — e, da fase 3 em diante,
+  cada um tem uma **mecânica especial**: ⏱️ Apressado (menos tempo por pergunta),
+  🌀 Trapaceiro (embaralha as respostas), 🛡️ Blindado (só acertos seguidos causam dano)
+  ou 💖 Curandeiro (se cura quando você erra).
+- ⚡ **Power-ups por combo**: combo x4 dá um 🛡️ **escudo** (bloqueia a perda de 1 vida)
+  e combo x8 dá um ⚡ **golpe duplo** (próximo acerto vale 2).
 - 🔥 Combos, pontuação, vidas e **recorde salvo** no aparelho (localStorage).
 - ⭐ **Estrelas por fase** (1–3) e relatório de fim de fase (precisão + fatos a treinar).
 - 🧠 **Repetição inteligente**: as contas que você mais erra aparecem com mais frequência.
@@ -115,7 +120,9 @@ Para uma nova fase, acrescente um objeto ao array `FASES`:
   tabuadas: [3, 6, 9],      // foco da fase (quais tabuadas treinar)
   corTema: 0x2ff7e6,        // cor do tema (hex)
   inimigoEmoji: "👾",
-  boss: { nome: "Nome do Chefão", emoji: "🐉", frase: "Provocação!" },
+  // mecanica é opcional: "tempoCurto" | "embaralha" | "blindado" | "curandeiro"
+  // (catálogo MECANICAS_CHEFAO no mesmo arquivo; números em JOGO.mecanicas)
+  boss: { nome: "Nome do Chefão", emoji: "🐉", frase: "Provocação!", mecanica: "embaralha" },
 }
 ```
 
