@@ -305,7 +305,8 @@ const UIScreens = (() => {
       return `
         <button class="fase-tile" type="button" data-fase="${f.id}" style="--cor:${corHex(f.corTema)}">
           <span class="ft-num">${f.id}</span>
-          <span class="ft-emo">${f.boss.emoji}</span>
+          <span class="ft-emo"><img src="assets/inimigos/boss-${f.id}.svg" alt=""
+            onerror="this.parentNode.textContent='${f.boss.emoji}'"></span>
           <span class="ft-foco">${rotuloFoco(f)}</span>
           <span class="ft-estrelas ${e ? "on" : ""}">${estr}</span>
         </button>`;

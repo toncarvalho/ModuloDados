@@ -2,7 +2,7 @@
  * Service Worker — cache do app shell para o jogo funcionar 100% offline
  * e carregar rápido. Estratégia cache-first com fallback de rede.
  */
-const CACHE = "idolmath-v17";
+const CACHE = "idolmath-v18";
 const ASSETS = [
   "./",
   "index.html",
@@ -46,6 +46,30 @@ const ASSETS = [
   "assets/herois/priya.svg",
   "assets/herois/priya-festival.svg",
   "assets/herois/priya-esporte.svg",
+  "assets/inimigos/inimigo-1.svg",
+  "assets/inimigos/boss-1.svg",
+  "assets/inimigos/inimigo-2.svg",
+  "assets/inimigos/boss-2.svg",
+  "assets/inimigos/inimigo-3.svg",
+  "assets/inimigos/boss-3.svg",
+  "assets/inimigos/inimigo-4.svg",
+  "assets/inimigos/boss-4.svg",
+  "assets/inimigos/inimigo-5.svg",
+  "assets/inimigos/boss-5.svg",
+  "assets/inimigos/inimigo-6.svg",
+  "assets/inimigos/boss-6.svg",
+  "assets/inimigos/inimigo-7.svg",
+  "assets/inimigos/boss-7.svg",
+  "assets/inimigos/inimigo-8.svg",
+  "assets/inimigos/boss-8.svg",
+  "assets/inimigos/inimigo-9.svg",
+  "assets/inimigos/boss-9.svg",
+  "assets/inimigos/inimigo-10.svg",
+  "assets/inimigos/boss-10.svg",
+  "assets/inimigos/inimigo-11.svg",
+  "assets/inimigos/boss-11.svg",
+  "assets/inimigos/inimigo-12.svg",
+  "assets/inimigos/boss-12.svg",
 ];
 
 self.addEventListener("install", (e) => {

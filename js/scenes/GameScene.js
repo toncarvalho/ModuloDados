@@ -25,6 +25,7 @@ class GameScene extends Phaser.Scene {
         tabuadas: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         corTema: 0xffd23e,
         inimigoEmoji: "🌟",
+        imgInimigo: "inimigo5", // reaproveita a arte da estrela (fase 5)
         boss: { nome: "", emoji: "🌟", frase: "" },
       };
       this.vidas = JOGO.vidas;
@@ -129,21 +130,7 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(1, 0);
 
-    // badge do herói (figura + nome) no topo-esquerdo (com a roupa equipada)
-    const texHeroi = texturaAvatar(this.heroi.id);
-    if (this.textures.exists(texHeroi)) {
-      this.add.image(64, 124, texHeroi).setDisplaySize(64, 64);
-    } else {
-      this.add.text(64, 96, this.heroi.emoji, { fontSize: "48px" }).setOrigin(0.5, 0);
-    }
-    this.add.text(104, 104, this.heroi.nome, {
-      fontFamily: UI.FONT,
-      fontSize: "30px",
-      fontStyle: "bold",
-      color: corHeroi,
-    });
-
-    // (a pausa é um botão HTML da camada de gameplay — GameUI)
+    // (o herói aparece em cena no palco — criarHeroi; a pausa é HTML — GameUI)
     this.atualizarHUD();
   }
 
@@ -166,20 +153,28 @@ class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
 
-    this.inimigoSprite = this.add
-      .text(cx, 360, this.fase.inimigoEmoji, { fontSize: "150px" })
-      .setOrigin(0.5);
+    // inimigo: arte SVG (assets/inimigos) com fallback para o emoji da fase.
+    // Container para animar figura e fallback do mesmo jeito.
+    this.inimigoCont = this.add.container(cx, 350);
+    this.inimigoImg = this.add.image(0, 0, "__WHITE").setVisible(false);
+    this.inimigoTxt = this.add
+      .text(0, 0, "", { fontSize: "150px" })
+      .setOrigin(0.5)
+      .setVisible(false);
+    this.inimigoCont.add([this.inimigoImg, this.inimigoTxt]);
     this.tweens.add({
-      targets: this.inimigoSprite,
-      y: 340,
+      targets: this.inimigoCont,
+      y: 330,
       duration: 900,
       yoyo: true,
       repeat: -1,
       ease: "Sine.inOut",
     });
 
+    this.criarHeroi();
+
     this.txtInimigoNome = this.add
-      .text(cx, 470, "", {
+      .text(cx, 492, "", {
         fontFamily: UI.FONT,
         fontSize: "30px",
         fontStyle: "bold",
@@ -234,11 +229,122 @@ class GameScene extends Phaser.Scene {
     return `Fase ${this.fase.id}: ${this.fase.nome}`;
   }
 
+  /**
+   * A heroína no palco (canto esquerdo), com a roupa equipada e um refletor
+   * na cor dela. Fallback: emoji do herói se a textura faltar.
+   */
+  criarHeroi() {
+    this.heroiBaseX = 104;
+    const y = 470;
+    this.heroiCont = this.add.container(this.heroiBaseX, y).setDepth(20);
+    const refletor = this.add.ellipse(0, 70, 128, 30, this.heroi.cor, 0.25);
+    const tex = texturaAvatar(this.heroi.id);
+    if (this.textures.exists(tex)) {
+      this.heroiImg = this.add.image(0, 0, tex).setDisplaySize(150, 150);
+    } else {
+      this.heroiImg = this.add
+        .text(0, 0, this.heroi.emoji, { fontSize: "84px" })
+        .setOrigin(0.5);
+    }
+    this.heroiCont.add([refletor, this.heroiImg]);
+    this.tweens.add({
+      targets: this.heroiImg,
+      y: -10,
+      duration: 1100,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.inOut",
+      delay: 300,
+    });
+  }
+
+  /** Mostra a figura do inimigo/chefão (textura se existir; senão o emoji). */
+  mostrarInimigo(chave, emoji, tamanho, tamanhoEmoji) {
+    if (chave && this.textures.exists(chave)) {
+      this.inimigoImg.setTexture(chave).setDisplaySize(tamanho, tamanho).setVisible(true);
+      this.inimigoTxt.setVisible(false);
+    } else {
+      this.inimigoTxt.setText(emoji).setFontSize(tamanhoEmoji).setVisible(true);
+      this.inimigoImg.setVisible(false);
+    }
+  }
+
+  chaveInimigo() {
+    return this.fase.imgInimigo || `inimigo${this.fase.id}`;
+  }
+
+  chaveBoss() {
+    return this.fase.imgBoss || `boss${this.fase.id}`;
+  }
+
+  /** Golpe da heroína: avanço + raio voando até o inimigo, impacto com faíscas. */
+  animarAtaque() {
+    const alvoX = this.inimigoCont.x;
+    const alvoY = this.inimigoCont.y;
+    if (!Util.reduzirMovimento()) {
+      this.tweens.add({
+        targets: this.heroiCont,
+        x: this.heroiBaseX + 46,
+        duration: 100,
+        yoyo: true,
+        ease: "Quad.out",
+      });
+    }
+    const raio = this.add.image(this.heroiCont.x + 48, this.heroiCont.y - 30, "raio").setDepth(60);
+    raio.setRotation(
+      Phaser.Math.Angle.Between(this.heroiCont.x, this.heroiCont.y, alvoX, alvoY) + Math.PI / 2
+    );
+    this.tweens.add({
+      targets: raio,
+      x: alvoX - 14,
+      y: alvoY + 8,
+      duration: 140,
+      ease: "Quad.in",
+      onComplete: () => {
+        raio.destroy();
+        this.particulas.emitParticleAt(alvoX, alvoY, 14);
+        this.tweens.add({
+          targets: this.inimigoCont,
+          scale: 0.8,
+          angle: Phaser.Math.Between(-12, 12),
+          duration: 90,
+          yoyo: true,
+          onComplete: () => this.inimigoCont.setAngle(0),
+        });
+      },
+    });
+  }
+
+  /** Contra-ataque do inimigo: investida + heroína atingida (pisca vermelho). */
+  animarGolpeRecebido() {
+    if (!Util.reduzirMovimento()) {
+      this.tweens.add({
+        targets: this.inimigoCont,
+        x: "-=110",
+        duration: 150,
+        yoyo: true,
+        ease: "Quad.out",
+      });
+    }
+    if (this.heroiImg.setTint) this.heroiImg.setTint(0xff5050);
+    this.tweens.add({
+      targets: this.heroiCont,
+      angle: -12,
+      duration: 120,
+      yoyo: true,
+      repeat: 1,
+      onComplete: () => {
+        this.heroiCont.setAngle(0);
+        if (this.heroiImg.clearTint) this.heroiImg.clearTint();
+      },
+    });
+  }
+
   desenharHpBar() {
     const cx = GAME_WIDTH / 2;
     const w = 460;
     const x = cx - w / 2;
-    const y = 510;
+    const y = 520;
     this.hpBarBg.clear();
     this.hpBar.clear();
     if (this.isBoss) {
@@ -261,13 +367,13 @@ class GameScene extends Phaser.Scene {
     }
     if (!this.isBoss) {
       this.txtInimigoNome.setText(`Inimigos: ${this.inimigosRestantes}`);
-      this.inimigoSprite.setText(this.fase.inimigoEmoji).setFontSize(150);
+      this.mostrarInimigo(this.chaveInimigo(), this.fase.inimigoEmoji, 215, 150);
     }
     this.desenharHpBar();
     if (!primeiro) {
-      this.inimigoSprite.setScale(0);
+      this.inimigoCont.setScale(0);
       this.tweens.add({
-        targets: this.inimigoSprite,
+        targets: this.inimigoCont,
         scale: 1,
         duration: 250,
         ease: "Back.out",
@@ -283,7 +389,7 @@ class GameScene extends Phaser.Scene {
     this.bossHp = this.bossHpMax;
 
     this.cameras.main.setBackgroundColor(0x0d0d12);
-    this.inimigoSprite.setText(boss.emoji).setFontSize(190);
+    this.mostrarInimigo(this.chaveBoss(), boss.emoji, 270, 190);
     this.txtInimigoNome.setText(`⚠️ ${boss.nome} ⚠️`);
     this.txtFase.setText(this.tituloFase());
 
@@ -406,19 +512,11 @@ class GameScene extends Phaser.Scene {
     AudioFX.golpe();
     Util.vibrar(30);
 
-    this.particulas.emitParticleAt(this.inimigoSprite.x, this.inimigoSprite.y, 14);
-    this.tweens.add({
-      targets: this.inimigoSprite,
-      scale: 0.8,
-      angle: Phaser.Math.Between(-12, 12),
-      duration: 90,
-      yoyo: true,
-      onComplete: () => this.inimigoSprite.setAngle(0),
-    });
+    this.animarAtaque();
     this.flutuarTexto(`+${ganho}`, "#ffd23e");
     this.atualizarHUD();
 
-    this.time.delayedCall(220, () => {
+    this.time.delayedCall(320, () => {
       this.respondendo = false;
       if (this.isBoss) {
         this.bossHp -= 1;
@@ -440,6 +538,7 @@ class GameScene extends Phaser.Scene {
     this.vidas -= 1;
     AudioFX.erro();
     Util.vibrar([60, 40, 60]);
+    this.animarGolpeRecebido();
     if (!Util.reduzirMovimento()) {
       this.cameras.main.shake(250, 0.012);
       this.cameras.main.flash(150, 120, 0, 0);
@@ -543,6 +642,18 @@ class GameScene extends Phaser.Scene {
     this.limparBotoes();
     AudioFX.vitoria();
     Util.vibrar([40, 30, 80]);
+
+    // comemoração da heroína no palco
+    if (this.heroiCont) {
+      this.particulas.emitParticleAt(this.heroiCont.x, this.heroiCont.y - 20, 16);
+      this.tweens.add({
+        targets: this.heroiCont,
+        scale: 1.12,
+        duration: 180,
+        yoyo: true,
+        repeat: 2,
+      });
+    }
 
     this.pontuacao += Regras.bonusVitoria(this.vidas, this.maxCombo);
     Storage.setMelhorPontuacao(this.pontuacao);

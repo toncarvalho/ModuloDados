@@ -1,6 +1,6 @@
 /**
  * BootScene — gera as texturas via canvas/Graphics (sem assets externos):
- * fundo em gradiente e partícula de brilho.
+ * fundo em gradiente, partícula de brilho e raio (projétil do ataque).
  */
 class BootScene extends Phaser.Scene {
   constructor() {
@@ -28,11 +28,24 @@ class BootScene extends Phaser.Scene {
         });
       });
     }
+    // Inimigos e chefões (SVG flat, mesmo estilo dos heróis).
+    // Se um arquivo faltar, a cena usa o emoji da fase como fallback.
+    FASES.forEach((f) => {
+      this.load.svg(`inimigo${f.id}`, `assets/inimigos/inimigo-${f.id}.svg`, {
+        width: 256,
+        height: 256,
+      });
+      this.load.svg(`boss${f.id}`, `assets/inimigos/boss-${f.id}.svg`, {
+        width: 256,
+        height: 256,
+      });
+    });
   }
 
   create() {
     this.gerarFundo();
     this.gerarBrilho();
+    this.gerarRaio();
     // Navegação é HTML (overlay): abre o menu (ou a criação de perfil).
     // A BootScene fica como cena "host" ociosa por baixo do overlay; o gameplay
     // (GameScene/TrainScene) é iniciado sob demanda pelo UIScreens.
@@ -91,6 +104,27 @@ class BootScene extends Phaser.Scene {
     g.addColorStop(1, "rgba(255,62,165,0)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, s, s);
+    tex.refresh();
+  }
+
+  /** Raio — projétil do golpe da heroína (GameScene.animarAtaque). */
+  gerarRaio() {
+    const w = 40;
+    const h = 64;
+    const tex = this.textures.createCanvas("raio", w, h);
+    const ctx = tex.getContext();
+    ctx.beginPath();
+    ctx.moveTo(24, 2);
+    ctx.lineTo(8, 36);
+    ctx.lineTo(20, 36);
+    ctx.lineTo(14, 62);
+    ctx.lineTo(34, 24);
+    ctx.lineTo(22, 24);
+    ctx.closePath();
+    ctx.fillStyle = "#2ff7e6";
+    ctx.shadowColor = "#2ff7e6";
+    ctx.shadowBlur = 10;
+    ctx.fill();
     tex.refresh();
   }
 }

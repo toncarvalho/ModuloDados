@@ -84,6 +84,8 @@ js/data/herois.js     # 🦸 HEROIS (figura + cor + nome) — cosméticos
 js/data/roupas.js     # 🛍️ roupas da loja (por herói)
 js/data/conquistas.js # 🏅 conquistas (condição + recompensa)
 assets/herois/*.svg   # figuras dos personagens (DiceBear / Avataaars)
+assets/inimigos/*.svg # figuras dos inimigos e chefões (flat neon; fallback: emoji)
+tools/gerar-inimigos.mjs # gerador das figuras dos inimigos (node tools/gerar-inimigos.mjs)
 js/core/MathEngine.js # geração de perguntas e alternativas (puro, testável)
 js/core/Regras.js     # fórmulas de pontos/estrelas/moedas (puro, testável)
 js/core/Audio.js      # música + efeitos sonoros (Web Audio)
