@@ -114,7 +114,12 @@ A grande vantagem: **o jogo não coleta dado nenhum** — tudo é `localStorage`
 - [ ] Escrever e publicar a política de privacidade.
 - [ ] Ícones PNG finais e capturas de tela de loja (retrato, com legendas).
 
-**Fase 1 — Lançamento Android (2–4 semanas)**
+**Fase 1 — Valor de produção + Lançamento Android (2–4 semanas)**
+- [x] Arte dos inimigos e chefões (24 figuras SVG flat, estilo coeso com os heróis)
+      no lugar dos emojis — inclui os tiles da grade de fases.
+- [x] Heroína visível no palco, com animação de ataque (raio) e de golpe recebido.
+- [ ] Música real (2–3 loops licenciados), mantendo o synth como fallback.
+- [ ] Mecânica especial por chefão + power-ups de combo (ver §11).
 - [ ] Implementar flag `DEMO` e gating de conteúdo na web.
 - [ ] Empacotar com Capacitor (Android), assinar, testes internos.
 - [ ] Ficha da loja (PT-BR), questionário IARC, formulário Famílias.
@@ -150,3 +155,33 @@ Se a conversão da demo for baixa, testar: mais fases grátis (1–6) ou preço 
 - ❌ Coleta de dados / analytics de terceiros dentro do app.
 
 Essas exclusões **são parte do produto** — aparecem na ficha da loja como diferencial.
+
+## 11. Prontidão do produto (diagnóstico de jogabilidade — jul/2026)
+
+Avaliação honesta feita sobre o código: **o design já é vendável; a produção
+audiovisual é o que separa o jogo de um produto de loja.** Não há retrabalho de
+fundação a fazer.
+
+**Já em nível de produto pago (não mexer):**
+- Pedagogia real: repetição inteligente ponderada pelos erros, distratores da
+  "linha vizinha" (7×8 → 56, 63, 48, 49), visualização em grade de pontos no erro.
+- Meta-game completo: 12 fases, chefões, Boss Rush, Desafio do Dia com ofensiva,
+  conquistas, moedas, loja de roupas.
+- Diferenciais para os pais: painel com mapa de calor, perfis múltiplos, backup,
+  acessibilidade, 100% offline.
+- Qualidade técnica: testes, CI, PWA.
+
+**Lacunas que impediam a venda (em ordem de impacto):**
+1. ~~Inimigos e chefões eram emojis~~ → **resolvido**: 24 figuras SVG flat
+   (assets/inimigos/), com fallback para emoji se um arquivo faltar.
+2. ~~A fantasia "idol de palco" não aparecia na tela~~ → **resolvido**: a heroína
+   agora está no palco, ataca com um raio a cada acerto e reage ao ser atingida.
+3. Monotonia nas fases 5–12: a mecânica é constante; um chefão é igual ao inimigo
+   comum com mais HP. **Plano**: 1 mecânica especial por chefão (encurtar timer,
+   embaralhar opções, exigir 2 acertos seguidos) e 1–2 power-ups ganhos por combo —
+   cabe na arquitetura data-driven de `js/data/fases.js`.
+4. Áudio 100% sintetizado (Web Audio): funcional, mas o tema kpop pede música
+   marcante. **Plano**: 2–3 loops licenciados; synth vira fallback.
+
+Critério de "pronto para cobrar": itens 1–4 fechados + capturas de tela de loja
+que se sustentem ao lado dos concorrentes pagos da categoria.
