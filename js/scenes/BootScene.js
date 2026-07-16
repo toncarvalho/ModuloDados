@@ -28,6 +28,18 @@ class BootScene extends Phaser.Scene {
         });
       });
     }
+    // Inimigos e chefões (SVG flat, mesmo estilo dos heróis).
+    // Se um arquivo faltar, a cena usa o emoji da fase como fallback.
+    FASES.forEach((f) => {
+      this.load.svg(`inimigo${f.id}`, `assets/inimigos/inimigo-${f.id}.svg`, {
+        width: 256,
+        height: 256,
+      });
+      this.load.svg(`boss${f.id}`, `assets/inimigos/boss-${f.id}.svg`, {
+        width: 256,
+        height: 256,
+      });
+    });
   }
 
   create() {
