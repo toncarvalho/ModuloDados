@@ -1,0 +1,152 @@
+# Estratégia de Monetização — Premium Pago 💎
+
+> **Decisão (jul/2026):** o Idol Math será comercializado como **app pago de compra
+> única** (premium), **sem anúncios e sem compras internas**. Este documento registra
+> o racional, o plano técnico e o roadmap de lançamento.
+
+## 1. Racional da decisão
+
+Entre os modelos avaliados (premium, freemium, anúncios, licenciamento escolar),
+o premium pago é o que melhor se encaixa no produto:
+
+- **Público infantil**: anúncios em apps para crianças são juridicamente delicados
+  (LGPD no Brasil, COPPA/GDPR-K fora) e degradam a experiência pedagógica.
+- **Arquitetura atual**: o jogo é 100% offline, sem servidor e sem login. Compra
+  única não exige backend, contas de usuário nem infraestrutura de pagamento própria —
+  a loja do sistema (Google/Apple) cuida de tudo.
+- **Argumento de venda forte para os pais**: *"pague uma vez, sem anúncios, sem
+  compras dentro do jogo, sem coleta de dados, funciona offline"*. Isso é raro na
+  categoria e é exatamente o que pais de crianças pequenas procuram.
+- **Produto completo**: 12 fases, chefões, modo treino, Boss Rush, desafio diário,
+  conquistas, loja cosmética (com moedas ganhas jogando) e painel de progresso
+  para pais/professores justificam um preço de entrada.
+
+## 2. Proposta de valor (pitch da loja)
+
+**Título de loja:** Idol Math — Tabuada Kpop
+**Uma linha:** Aprenda a tabuada virando uma idol de palco: derrote chefões com
+contas de multiplicação!
+
+Pontos a destacar na ficha da loja:
+
+1. Sem anúncios, sem compras internas, sem cadastro.
+2. Nenhum dado sai do aparelho (progresso 100% local) — privacidade total.
+3. Funciona offline (avião, viagem, sem Wi-Fi).
+4. Vários jogadores no mesmo aparelho (irmãs, colegas), cada um com seu progresso.
+5. Painel para pais e professores: mapa de calor das tabuadas e fatos a treinar.
+6. Pedagogia real: repetição inteligente dos erros + visualização em grade de pontos.
+
+## 3. Praças de venda e ordem de ataque
+
+| Fase | Praça | Modelo | Observações |
+|------|-------|--------|-------------|
+| 1 | **Google Play** | App pago (compra única) | Maior público Android no Brasil; taxa única de US$ 25 para conta de desenvolvedor |
+| 2 | **App Store (iOS)** | App pago | US$ 99/ano; categoria Kids tem regras próprias (ver §6) |
+| 3 | **itch.io / venda direta** | Pague o que quiser ou preço fixo | Baixa fricção, bom para validar preço e colher feedback |
+
+A **versão web** continua existindo como **demo e marketing** (ver §5).
+
+## 4. Empacotamento técnico
+
+O jogo é HTML+JS puro (Phaser vendorizado, sem build). Duas rotas para virar app:
+
+### Recomendada: Capacitor
+
+- Embute todos os assets **dentro do app** → offline de verdade, sem depender de
+  hospedagem; funciona igual em **Android e iOS** (uma configuração serve às duas lojas).
+- O projeto atual entra como `webDir` sem alterações; `sw.js` torna-se redundante
+  dentro do app (inofensivo — pode ser mantido para a versão web).
+- Passos: `npm init` mínimo apenas para o empacote (o jogo em si segue sem build),
+  `npx cap add android` / `npx cap add ios`, ícones/splash a partir de
+  `assets/icon.svg`, assinatura e upload.
+
+### Alternativa: TWA / Bubblewrap (só Android)
+
+- Menor esforço, porém depende do site publicado (GitHub Pages) e não cobre iOS.
+- Válida como atalho para a Fase 1 se quisermos ir ao ar mais rápido; migrar para
+  Capacitor na Fase 2 de qualquer forma.
+
+**Decisão técnica:** Capacitor, para não fazer o trabalho duas vezes.
+
+## 5. Versão web = demo
+
+Se a web continuar com o jogo completo e grátis, não há motivo para comprar o app.
+A web passa a ser a **demo jogável** (e principal canal de aquisição):
+
+- **Demo inclui:** fases 1 a 4, modo treino da tabuada da fase, perfis locais.
+- **Demo exclui:** fases 5–12, Boss Rush, Desafio do Dia, loja de roupas.
+- Ao tocar em conteúdo bloqueado, tela simpática "Continue no app completo" com
+  link para as lojas (sem dark patterns — é um jogo para crianças).
+- Implementação: flag `DEMO` em `js/data/fases.js` (config `JOGO`), avaliada nas
+  telas de fases/menu em `js/ui/screens.js`. O empacote Capacitor usa `DEMO: false`.
+
+## 6. Preço
+
+- **Brasil (Google Play):** lançar a **R$ 14,90**. Faixa de referência da categoria
+  educacional infantil: R$ 9,90–29,90. Promoção de lançamento a R$ 9,90 nas duas
+  primeiras semanas para gerar volume e avaliações iniciais.
+- **iOS:** tier equivalente (~US$ 2,99), público iOS aceita preço um pouco maior.
+- Revisar preço após ~90 dias com dados reais de conversão da ficha da loja.
+
+## 7. Conformidade (o dever de casa jurídico)
+
+A grande vantagem: **o jogo não coleta dado nenhum** — tudo é `localStorage`.
+
+- [ ] **Política de privacidade** publicada em URL própria (obrigatória nas duas
+      lojas, mesmo sem coleta). Conteúdo: "nenhum dado pessoal é coletado ou
+      transmitido; todo progresso fica no aparelho".
+- [ ] **Google Play – Famílias**: aderir ao programa *Designed for Families*
+      (público-alvo: crianças). Preencher o formulário de segurança de dados
+      declarando zero coleta. Sem SDKs de terceiros = aprovação simples.
+- [ ] **App Store – categoria Kids**: proibido analytics/ads de terceiros (ok, não
+      temos), links externos precisam de *parental gate*. O link "app completo" da
+      demo web não existe dentro do app — dentro do app não há link externo algum.
+- [ ] **LGPD**: sem coleta, sem tratamento de dados → risco mínimo; a política de
+      privacidade documenta isso.
+- [ ] **Classificação indicativa**: Livre (ClassInd) / Everyone (ESRB) via
+      questionário IARC no console da Play.
+
+## 8. Roadmap
+
+**Fase 0 — Preparação (1–2 semanas)**
+- [ ] Corrigir o deploy do GitHub Pages (workflow com falha) — a web/demo depende disso.
+- [ ] Criar conta Google Play Developer (US$ 25) + perfil de pagamentos (merchant).
+- [ ] Escrever e publicar a política de privacidade.
+- [ ] Ícones PNG finais e capturas de tela de loja (retrato, com legendas).
+
+**Fase 1 — Lançamento Android (2–4 semanas)**
+- [ ] Implementar flag `DEMO` e gating de conteúdo na web.
+- [ ] Empacotar com Capacitor (Android), assinar, testes internos.
+- [ ] Ficha da loja (PT-BR), questionário IARC, formulário Famílias.
+- [ ] Publicar a R$ 9,90 (promo de lançamento) → R$ 14,90.
+
+**Fase 2 — iOS (4–6 semanas após Android)**
+- [ ] Conta Apple Developer (US$ 99/ano) — só abrir se o Android validar demanda.
+- [ ] Build Capacitor iOS, categoria Kids, revisão da Apple.
+
+**Fase 3 — Tração**
+- [ ] itch.io como canal secundário.
+- [ ] Divulgação: grupos de pais/professores, TikTok/Reels (estética kpop ajuda),
+      professores de matemática como multiplicadores.
+- [ ] Avaliar pacote/licença para escolas como evolução futura (exigiria backend).
+
+## 9. Metas e critérios de sucesso
+
+| Métrica | Meta inicial (90 dias) |
+|---------|------------------------|
+| Instalações pagas (Android) | 300 |
+| Nota média na loja | ≥ 4,5 |
+| Conversão demo web → loja | ≥ 3% dos jogadores que batem no gate |
+| Reembolsos | < 5% |
+
+Se a conversão da demo for baixa, testar: mais fases grátis (1–6) ou preço menor —
+**nunca** anúncios ou compras internas, que quebrariam a promessa do produto.
+
+## 10. O que fica explicitamente fora
+
+- ❌ Anúncios (qualquer formato, mesmo "rewarded").
+- ❌ Compra de moedas ou qualquer IAP consumível.
+- ❌ Assinatura.
+- ❌ Coleta de dados / analytics de terceiros dentro do app.
+
+Essas exclusões **são parte do produto** — aparecem na ficha da loja como diferencial.
